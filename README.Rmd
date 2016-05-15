@@ -19,14 +19,14 @@ This is an R Package meant to easen the uploading of bulk data into Amazon Redsh
 
 To install this package, you'll need to execute these commands:
 
-    ``` r
+``` r
     install.packages('devtools')
     devtools::install_github("RcppCore/Rcpp")
     devtools::install_github("rstats-db/DBI")
     devtools::install_github("rstats-db/RPostgres")
     install.packages("aws.s3", repos = c(getOption("repos"), "http://cloudyr.github.io/drat"))
     devtools::install_github("sicarul/redshiftTools")
-    ```
+```
 
 ## Usage
 
@@ -34,7 +34,7 @@ You'll have available now 2 functions: `rs_replace_table` and `rs_upsert_table`,
 
 For example, suppose we have a table to load with 2 integer columns, we could use the following code:
 
-    ``` r
+``` r
     library("aws.s3")
     library(RPostgres)
     library(redshiftTools)
@@ -51,4 +51,4 @@ For example, suppose we have a table to load with 2 integer columns, we could us
     b=rs_replace_table(a, dbcon=con, tableName='mytable', bucket="mybucket", split_files=4)
     c=rs_upsert_table(nx, dbcon=con, tableName = 'mytable', split_files=4, bucket="mybucket", keys=c('a'))
 
-    ```
+```
