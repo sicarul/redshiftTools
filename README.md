@@ -9,7 +9,7 @@ Installation
 
 To install this package, you'll need to execute these commands:
 
-    ```R
+    ``` r
     install.packages('devtools')
     devtools::install_github("RcppCore/Rcpp")
     devtools::install_github("rstats-db/DBI")
@@ -25,7 +25,7 @@ You'll have available now 2 functions: `rs_replace_table` and `rs_upsert_table`,
 
 For example, suppose we have a table to load with 2 integer columns, we could use the following code:
 
-    ```R
+    ``` r
     library("aws.s3")
     library(RPostgres)
     library(redshiftTools)
