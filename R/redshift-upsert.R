@@ -43,6 +43,11 @@ rs_upsert_table = function(
     secret_key=Sys.getenv('AWS_SECRET_ACCESS_KEY')
     )
   {
+
+  Sys.setenv('AWS_DEFAULT_REGION'=region)
+  Sys.setenv('AWS_ACCESS_KEY_ID'=access_key)
+  Sys.setenv('AWS_SECRET_ACCESS_KEY'=secret_key)
+
   if(missing(split_files)){
     print("Getting number of slices from Redshift")
     slices = queryDo(dbcon,"select count(*) from stv_slices")
@@ -52,8 +57,6 @@ rs_upsert_table = function(
   split_files = min(split_files, nrow(data))
 
   prefix = uploadToS3(data, bucket, split_files)
-
-
 
 
   result = tryCatch({
@@ -86,13 +89,17 @@ rs_upsert_table = function(
     queryDo(sprintf("drop table %s", stageTable))
     print("Commiting")
     queryDo(dbcon, "COMMIT;")
+    return(TRUE)
   }, warning = function(w) {
       print(w)
   }, error = function(e) {
       print(e$message)
       queryDo(dbcon, 'ROLLBACK;')
+      return(FALSE)
   }, finally = {
     print("Deleting temporary files from S3 bucket")
     deletePrefix(prefix, bucket, split_files)
   })
+
+  return (result)
 }
