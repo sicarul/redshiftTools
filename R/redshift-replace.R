@@ -27,20 +27,20 @@
 #' }
 #' @export
 rs_replace_table = function(
-    data,
-    dbcon,
-    tableName,
-    split_files,
-    bucket=Sys.getenv('AWS_BUCKET_NAME'),
-    region=Sys.getenv('AWS_DEFAULT_REGION'),
-    access_key=Sys.getenv('AWS_ACCESS_KEY_ID'),
-    secret_key=Sys.getenv('AWS_SECRET_ACCESS_KEY')
-    )
-  {
+  data,
+  dbcon,
+  tableName,
+  split_files,
+  bucket = Sys.getenv('AWS_BUCKET_NAME'),
+  region = Sys.getenv('AWS_DEFAULT_REGION'),
+  access_key = Sys.getenv('AWS_ACCESS_KEY_ID'),
+  secret_key = Sys.getenv('AWS_SECRET_ACCESS_KEY')
+) {
+
   if(missing(split_files)){
     print("Getting number of slices from Redshift")
-    slices = queryDo(dbcon,"select count(*) from stv_slices")
-    split_files = unlist(slices[1]*4)
+    slices <- queryDo(dbcon,"select count(*) from stv_slices")
+    split_files <- unlist(slices[1]*4)
     print(sprintf("%s slices detected, will split into %s files", slices, split_files))
   }
   split_files = min(split_files, nrow(data))
@@ -48,32 +48,32 @@ rs_replace_table = function(
   prefix = uploadToS3(data, bucket, split_files)
 
 
+  split_files <- min(split_files, nrow(data))
+  prefix <- uploadToS3(data, bucket, split_files)
 
   result = tryCatch({
       print("Truncating target table")
       queryDo(dbcon, sprintf("truncate table %s", tableName))
 
-      print("Copying data from S3 into Redshift")
-      queryDo(dbcon, sprintf("copy %s from 's3://%s/%s.' region '%s' csv gzip ignoreheader 1 emptyasnull credentials 'aws_access_key_id=%s;aws_secret_access_key=%s';",
-                          tableName,
-                          bucket,
-                          prefix,
-                          region,
-                          access_key,
-                          secret_key
-              ))
+    print("Copying data from S3 into Redshift")
+    queryDo(dbcon, sprintf("copy %s from 's3://%s/%s.' REGION '%s' GZIP IGNOREHEADER 1 CSV DELIMITER '|' credentials 'aws_access_key_id=%s;aws_secret_access_key=%s';",
+                           tableName,
+                           bucket,
+                           prefix,
+                           region,
+                           access_key,
+                           secret_key
+    ))
 
-      print("Committing changes")
-      queryDo(dbcon, "COMMIT;")
+    print("Committing changes")
+    queryDo(dbcon, "COMMIT;")
   }, warning = function(w) {
-      print(w)
+    print(w)
   }, error = function(e) {
-      print(e$message)
-      queryDo(dbcon, 'ROLLBACK;')
+    print(e$message)
+    queryDo(dbcon, 'ROLLBACK;')
   }, finally = {
     print("Deleting temporary files from S3 bucket")
     deletePrefix(prefix, bucket, split_files)
   })
-
 }
-
