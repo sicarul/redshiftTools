@@ -24,9 +24,14 @@ uploadToS3 <- function(data, bucket, split_files) {
 
     part <- data.frame(splitted[i])
 
-    tmpFile = tempfile()
-    s3Name=paste(prefix, ".", formatC(i, width = 4, format = "d", flag = "0"), sep="")
-    write.csv(part, gzfile(tmpFile), na='', row.names=F)
+    tmpFile <- tempfile()
+    s3Name <- paste0(paste(prefix, ".", formatC(i, width = 4, format = "d", flag = "0"), sep = ""), ".psv.gz")
+    # http://docs.aws.amazon.com/redshift/latest/dg/copy-parameters-data-format.html
+    # The default redshift delimiter is a pipe, "|"
+    write.table(part, gzfile(tmpFile), sep = "|", na = "", row.names = F, col.names = T,
+                # ending a line with the delimiter is required, otherwise stl_load_errors
+                # will return: Delimiter not found
+                eol = "|\n")
 
     print(paste("Uploading", s3Name))
     put_object(file = tmpFile, object = s3Name, bucket = bucket)
