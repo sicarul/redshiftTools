@@ -43,17 +43,13 @@ rs_replace_table = function(
     split_files <- unlist(slices[1]*4)
     print(sprintf("%s slices detected, will split into %s files", slices, split_files))
   }
-  split_files = min(split_files, nrow(data))
-
-  prefix = uploadToS3(data, bucket, split_files)
-
 
   split_files <- min(split_files, nrow(data))
   prefix <- uploadToS3(data, bucket, split_files)
 
   result = tryCatch({
-      print("Truncating target table")
-      queryDo(dbcon, sprintf("truncate table %s", tableName))
+    # print("Truncating target table")
+    # queryDo(dbcon, sprintf("truncate table %s", tableName))
 
     print("Copying data from S3 into Redshift")
     queryDo(dbcon, sprintf("copy %s from 's3://%s/%s.' REGION '%s' GZIP IGNOREHEADER 1 CSV DELIMITER '|' credentials 'aws_access_key_id=%s;aws_secret_access_key=%s';",
