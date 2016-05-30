@@ -32,53 +32,53 @@
 #'}
 #' @export
 rs_upsert_table = function(
-    data,
-    dbcon,
-    tableName,
-    keys,
-    split_files,
-    bucket=Sys.getenv('AWS_BUCKET_NAME'),
-    region=Sys.getenv('AWS_DEFAULT_REGION'),
-    access_key=Sys.getenv('AWS_ACCESS_KEY_ID'),
-    secret_key=Sys.getenv('AWS_SECRET_ACCESS_KEY')
-    )
-  {
+  data,
+  dbcon,
+  tableName,
+  keys,
+  split_files,
+  bucket=Sys.getenv('AWS_BUCKET_NAME'),
+  region=Sys.getenv('AWS_DEFAULT_REGION'),
+  access_key=Sys.getenv('AWS_ACCESS_KEY_ID'),
+  secret_key=Sys.getenv('AWS_SECRET_ACCESS_KEY')
+) {
   if(missing(split_files)){
     print("Getting number of slices from Redshift")
     slices = queryDo(dbcon,"select count(*) from stv_slices")
     split_files = unlist(slices[1]*4)
     print(sprintf("%s slices detected, will split into %s files", slices, split_files))
   }
-  split_files = min(split_files, nrow(data))
+  split_files <- min(split_files, nrow(data))
 
-  prefix = uploadToS3(data, bucket, split_files)
+  prefix <- uploadToS3(data, bucket, split_files)
 
+  result <- tryCatch({
+    print("Beginning transaction")
+    queryDo(dbcon, "BEGIN;")
 
-
-
-  result = tryCatch({
-    stageTable=paste0(sample(letters,16),collapse = "")
+    stageTable <- paste0(sample(letters, 16), collapse = "")
 
     queryDo(dbcon, sprintf("create temp table %s (like %s)", stageTable, tableName))
 
     print("Copying data from S3 into Redshift")
-    queryDo(dbcon, sprintf("copy %s from 's3://%s/%s.' region '%s' csv gzip ignoreheader 1 emptyasnull credentials 'aws_access_key_id=%s;aws_secret_access_key=%s';",
-                        stageTable,
-                        bucket,
-                        prefix,
-                        region,
-                        access_key,
-                        secret_key
-            ))
+    queryDo(dbcon, sprintf("copy %s from 's3://%s/%s.' region '%s' truncatecolumns acceptinvchars as '^' escape delimiter '|' removequotes gzip ignoreheader 1 emptyasnull credentials 'aws_access_key_id=%s;aws_secret_access_key=%s';",
+                           stageTable,
+                           bucket,
+                           prefix,
+                           region,
+                           access_key,
+                           secret_key
+    ))
+
     if(!missing(keys)){
       print("Deleting rows with same keys")
-      keysCond = paste(stageTable,".",keys, "=", tableName,".",keys, sep="")
+      keysCond <- paste(stageTable,".", keys, "=", tableName, ".", keys, sep="")
       keysWhere = sub(" and $", "", paste0(keysCond, collapse="", sep=" and "))
       queryDo(dbcon, sprintf('delete from %s using %s where %s',
-              tableName,
-              stageTable,
-              keysWhere
-              ))
+                             tableName,
+                             stageTable,
+                             keysWhere
+      ))
     }
     print("Insert new rows")
     queryDo(dbcon, sprintf('insert into %s select * from %s', tableName, stageTable))
@@ -87,10 +87,10 @@ rs_upsert_table = function(
     print("Commiting")
     queryDo(dbcon, "COMMIT;")
   }, warning = function(w) {
-      print(w)
+    print(w)
   }, error = function(e) {
-      print(e$message)
-      queryDo(dbcon, 'ROLLBACK;')
+    print(e$message)
+    queryDo(dbcon, 'ROLLBACK;')
   }, finally = {
     print("Deleting temporary files from S3 bucket")
     deletePrefix(prefix, bucket, split_files)
