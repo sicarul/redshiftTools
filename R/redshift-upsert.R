@@ -53,35 +53,33 @@ rs_upsert_table = function(
   prefix <- uploadToS3(data, bucket, split_files)
 
   result <- tryCatch({
-    print("Beginning transaction")
-    queryDo(dbcon, "BEGIN;")
-
     stageTable <- paste0(sample(letters, 16), collapse = "")
 
     queryDo(dbcon, sprintf("create temp table %s (like %s)", stageTable, tableName))
 
     print("Copying data from S3 into Redshift")
     queryDo(dbcon, sprintf("copy %s from 's3://%s/%s.' region '%s' truncatecolumns acceptinvchars as '^' escape delimiter '|' removequotes gzip ignoreheader 1 emptyasnull credentials 'aws_access_key_id=%s;aws_secret_access_key=%s';",
-                           stageTable,
-                           bucket,
-                           prefix,
-                           region,
-                           access_key,
-                           secret_key
+                                           stageTable,
+                                           bucket,
+                                           prefix,
+                                           region,
+                                           access_key,
+                                           secret_key
     ))
 
     if(!missing(keys)){
       print("Deleting rows with same keys")
       keysCond <- paste(stageTable,".", keys, "=", tableName, ".", keys, sep="")
-      keysWhere = sub(" and $", "", paste0(keysCond, collapse="", sep=" and "))
-      queryDo(dbcon, sprintf('delete from %s using %s where %s',
-                             tableName,
-                             stageTable,
-                             keysWhere
+      keysWhere <- sub(" and $", "", paste0(keysCond, collapse="", sep=" and "))
+      queryDo(dbcon, sprintf('delete from %s using %s where %s;',
+                                             tableName,
+                                             stageTable,
+                                             keysWhere
       ))
     }
     print("Insert new rows")
-    queryDo(dbcon, sprintf('insert into %s select * from %s', tableName, stageTable))
+    queryDo(dbcon, sprintf('insert into %s select * from %s;', tableName, stageTable))
+
     queryDo(dbcon, sprintf("drop table %s;", stageTable))
 
     print("Commiting")
