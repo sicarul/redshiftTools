@@ -34,7 +34,8 @@ rs_replace_table = function(
   bucket = Sys.getenv('AWS_BUCKET_NAME'),
   region = Sys.getenv('AWS_DEFAULT_REGION'),
   access_key = Sys.getenv('AWS_ACCESS_KEY_ID'),
-  secret_key = Sys.getenv('AWS_SECRET_ACCESS_KEY')
+  secret_key = Sys.getenv('AWS_SECRET_ACCESS_KEY'),
+  remove_quotes = TRUE
 ) {
 
   if(missing(split_files)){
@@ -54,7 +55,12 @@ rs_replace_table = function(
     queryDo(dbcon, sprintf("truncate table %s", tableName))
 
     print("Copying data from S3 into Redshift")
-    queryDo(dbcon, sprintf("copy %s from 's3://%s/%s.' region '%s' truncatecolumns acceptinvchars as '^' escape delimiter '|' removequotes gzip ignoreheader 1 emptyasnull credentials 'aws_access_key_id=%s;aws_secret_access_key=%s';",
+    if(remove_quotes) {
+      query_string <- "copy %s from 's3://%s/%s.' region '%s' truncatecolumns acceptinvchars as '^' escape delimiter '|' removequotes gzip ignoreheader 1 emptyasnull credentials 'aws_access_key_id=%s;aws_secret_access_key=%s';"
+    } else {
+      query_string <- "copy %s from 's3://%s/%s.' region '%s' truncatecolumns acceptinvchars as '^' escape delimiter '|' gzip ignoreheader 1 emptyasnull credentials 'aws_access_key_id=%s;aws_secret_access_key=%s';"
+    }
+    queryDo(dbcon, sprintf(query_string,
                            tableName,
                            bucket,
                            prefix,
