@@ -4,7 +4,7 @@
 #' @importFrom "utils" "write.csv"
 uploadToS3 <- function(data, bucket, split_files) {
 
-  prefix = paste0(sample(letters, 16), collapse = "")
+  prefix = paste0(sample(letters, 32, replace = TRUE), collapse = "")
 
   if(!bucket_exists(bucket)) {
     stop("Bucket does not exist")

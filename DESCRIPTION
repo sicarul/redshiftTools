@@ -11,7 +11,8 @@ Depends:
 Imports:
     DBI,
     RPostgres,
-    aws.s3
+    aws.s3,
+    parallel
 Description: Tools to upload data to an Amazon Redshift Database with good performance.
 License: MIT + file LICENSE
 LazyData: TRUE
