@@ -19,8 +19,7 @@ uploadToS3 <- function(data, bucket, split_files) {
   }
 
   splitted = suppressWarnings(split(data, seq(1:split_files)))
-
-  for(i in 1:split_files) {
+  parallel::mclapply(1:split_files, function(i) {
 
     part <- data.frame(splitted[i])
 
