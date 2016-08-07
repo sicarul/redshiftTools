@@ -56,9 +56,13 @@ rs_upsert_table = function(
   split_files <- min(split_files, nrow(data))
 
   prefix <- uploadToS3(data, bucket, split_files)
+  on.exit({
+    print("Deleting temporary files from S3 bucket")
+    deletePrefix(prefix, bucket, split_files)
+  })
 
   result <- tryCatch({
-    stageTable <- paste0(sample(letters, 32), collapse = "")
+    stageTable <- paste0(sample(letters, 32, replace=TRUE), collapse = "")
 
     queryDo(dbcon, sprintf("create temp table %s (like %s)", stageTable, tableName))
 
@@ -96,9 +100,6 @@ rs_upsert_table = function(
     print(e$message)
     queryDo(dbcon, 'ROLLBACK;')
     return(FALSE)
-  }, finally = {
-    print("Deleting temporary files from S3 bucket")
-    deletePrefix(prefix, bucket, split_files)
   })
 
   return (result)

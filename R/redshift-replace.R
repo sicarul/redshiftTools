@@ -50,6 +50,10 @@ rs_replace_table = function(
 
   split_files <- min(split_files, nrow(data))
   prefix <- uploadToS3(data, bucket, split_files)
+  on.exit({
+    print("Deleting temporary files from S3 bucket")
+    deletePrefix(prefix, bucket, split_files)
+  })
 
   result = tryCatch({
     print("Beginning transaction")
@@ -81,9 +85,6 @@ rs_replace_table = function(
       print(e$message)
       queryDo(dbcon, 'ROLLBACK;')
       return(FALSE)
-  }, finally = {
-    print("Deleting temporary files from S3 bucket")
-    deletePrefix(prefix, bucket, split_files)
   })
   return (result)
 }
