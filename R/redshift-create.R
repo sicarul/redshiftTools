@@ -1,6 +1,7 @@
 #' Create redshift table
 #' @param .data \code{data.frame}
 #' @param table_name \code{character}
+#' @export
 rs_create_table <- function(.data, table_name) {
   data_types <- recode(unlist(lapply(.data, class)),
          numeric = "FLOAT8",
