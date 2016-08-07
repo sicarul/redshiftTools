@@ -3,7 +3,6 @@
 #' @param table_name \code{character}
 #' @export
 rs_create_table <- function(.data, table_name) {
-  browser()
   classes <- lapply(.data, class)
   classes_first_pass <- lapply(classes, function(x) {
     if (all(c("POSIXct", "POSIXt") %in% x)) {
