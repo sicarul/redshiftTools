@@ -50,8 +50,9 @@ uploadToS3 <- function(data, bucket, split_files) {
 
 #' @importFrom "aws.s3" "delete_object"
 deletePrefix <- function(prefix, bucket, split_files){
+  browser()
   for(i in 1:split_files) {
-    s3Name = paste(prefix, ".", formatC(i, width = 4, format = "d", flag = "0"), sep="")
+    s3Name = paste(prefix, ".", formatC(i, width = 4, format = "d", flag = "0"), ".psv.gz", sep="")
     print(paste("Deleting", s3Name))
     delete_object(s3Name, bucket)
   }
