@@ -87,7 +87,8 @@ rs_upsert_table = function(
       ))
     }
     print("Insert new rows")
-    queryDo(dbcon, sprintf('insert into %s select * from %s;', tableName, stageTable))
+    
+    queryDo(dbcon, sprintf('insert into %s (select * from %s);', tableName, stageTable))
 
     queryDo(dbcon, sprintf("drop table %s;", stageTable))
 

@@ -42,7 +42,7 @@ uploadToS3 <- function(data, bucket, split_files) {
 
     print(paste("Uploading", s3Name))
     put_object(file = paste0(tmpFile, ".gz"), object = s3Name, bucket = bucket)
-  }
+  })
 
   return(prefix)
 }
