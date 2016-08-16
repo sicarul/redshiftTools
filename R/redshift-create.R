@@ -2,7 +2,7 @@
 #' @param .data \code{data.frame}
 #' @param table_name \code{character}
 #' @export
-rs_create_table <- function(.data, table_name) {
+rs_create_table <- function(.data, dbcon, table_name) {
   classes <- lapply(.data, class)
   classes_first_pass <- lapply(classes, function(x) {
     if (all(c("POSIXct", "POSIXt") %in% x)) {
@@ -20,5 +20,5 @@ rs_create_table <- function(.data, table_name) {
          character = "VARCHAR(255)")
   spec <- paste(paste(names(.data), data_types), collapse=", ")
   sql_code <- whisker::whisker.render("CREATE TABLE IF NOT EXISTS {{table_name}} ({{spec}})")
-  DBI::dbGetQuery(rs_db()$con, sql_code)
+  DBI::dbGetQuery(dbcon, sql_code)
 }

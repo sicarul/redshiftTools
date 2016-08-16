@@ -4,7 +4,7 @@
 \alias{rs_create_table}
 \title{Create redshift table}
 \usage{
-rs_create_table(.data, table_name)
+rs_create_table(.data, dbcon, table_name)
 }
 \arguments{
 \item{.data}{\code{data.frame}}
