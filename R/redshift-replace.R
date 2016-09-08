@@ -56,12 +56,12 @@ rs_replace_table = function(
   })
 
   result = tryCatch({
-    print("Beginning transaction")
+    message("Beginning transaction")
     queryDo(dbcon, "BEGIN;")
-    print("Truncating target table")
+    message("Truncating target table")
     queryDo(dbcon, sprintf("truncate table %s", tableName))
 
-    print("Copying data from S3 into Redshift")
+    message("Copying data from S3 into Redshift")
     if(remove_quotes) {
       query_string <- "copy %s from 's3://%s/%s.' region '%s' truncatecolumns acceptinvchars as '^' escape delimiter '|' removequotes gzip ignoreheader 1 emptyasnull credentials 'aws_access_key_id=%s;aws_secret_access_key=%s';"
     } else {
@@ -76,14 +76,15 @@ rs_replace_table = function(
                            secret_key
     ))
 
-      print("Committing changes")
+      message("Committing changes")
       queryDo(dbcon, "COMMIT;")
       return(TRUE)
   }, warning = function(w) {
     print(w)
   }, error = function(e) {
-      print(e$message)
+      message(e$message)
       queryDo(dbcon, 'ROLLBACK;')
+      message("Rollback complete")
       return(FALSE)
   })
   return (result)
