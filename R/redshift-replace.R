@@ -55,8 +55,8 @@ rs_replace_table = function(
 
 
   result = tryCatch({
-      print("Truncating target table")
-      queryDo(dbcon, sprintf("truncate table %s", tableName))
+      print("Deleting target table for replacement")
+      queryDo(dbcon, sprintf("delete from table %s", tableName))
 
       print("Copying data from S3 into Redshift")
       queryDo(dbcon, sprintf("copy %s from 's3://%s/%s.' region '%s' csv gzip ignoreheader 1 emptyasnull credentials 'aws_access_key_id=%s;aws_secret_access_key=%s';",
