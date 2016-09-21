@@ -48,16 +48,16 @@ rs_upsert_table = function(
   Sys.setenv('AWS_SECRET_ACCESS_KEY'=secret_key)
 
   if(missing(split_files)){
-    print("Getting number of slices from Redshift")
+    message("Getting number of slices from Redshift")
     slices = queryDo(dbcon,"select count(*) from stv_slices")
     split_files = unlist(slices[1]*4)
-    print(sprintf("%s slices detected, will split into %s files", slices, split_files))
+    message(sprintf("%s slices detected, will split into %s files", slices, split_files))
   }
   split_files <- min(split_files, nrow(data))
 
   prefix <- uploadToS3(data, bucket, split_files)
   on.exit({
-    print("Deleting temporary files from S3 bucket")
+    message("Deleting temporary files from S3 bucket")
     deletePrefix(prefix, bucket, split_files)
   })
 
@@ -66,7 +66,7 @@ rs_upsert_table = function(
 
     queryDo(dbcon, sprintf("create temp table %s (like %s)", stageTable, tableName))
 
-    print("Copying data from S3 into Redshift")
+    message("Copying data from S3 into Redshift")
     queryDo(dbcon, sprintf("copy %s from 's3://%s/%s.' region '%s' truncatecolumns acceptinvchars as '^' escape delimiter '|' removequotes gzip ignoreheader 1 emptyasnull credentials 'aws_access_key_id=%s;aws_secret_access_key=%s';",
                                            stageTable,
                                            bucket,
@@ -77,7 +77,7 @@ rs_upsert_table = function(
     ))
 
     if(!missing(keys)){
-      print("Deleting rows with same keys")
+      message("Deleting rows with same keys")
       keysCond <- paste(stageTable,".", keys, "=", tableName, ".", keys, sep="")
       keysWhere <- sub(" and $", "", paste0(keysCond, collapse="", sep=" and "))
       queryDo(dbcon, sprintf('delete from %s using %s where %s;',
@@ -86,19 +86,19 @@ rs_upsert_table = function(
                                              keysWhere
       ))
     }
-    print("Insert new rows")
-    
+    message("Insert new rows")
+
     queryDo(dbcon, sprintf('insert into %s (select * from %s);', tableName, stageTable))
 
     queryDo(dbcon, sprintf("drop table %s;", stageTable))
 
-    print("Commiting")
+    message("Commiting")
     queryDo(dbcon, "COMMIT;")
     return(TRUE)
   }, warning = function(w) {
-    print(w)
+    message(w)
   }, error = function(e) {
-    print(e$message)
+    message(e$message)
     queryDo(dbcon, 'ROLLBACK;')
     return(FALSE)
   })
