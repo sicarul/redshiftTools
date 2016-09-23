@@ -44,6 +44,7 @@ uploadToS3 <- function(data, bucket, split_files) {
     s3 <- switch(bucket,
            `zapier-data-science-storage` = data_science_storage_s3(),
            `data-monolith-etl` = data_monolith_etl_s3(),
+           `data-monolith-staging` = data_monolith_staging_s3(),
           data_science_storage_s3()
     )
     s3$set_file(object = s3Name, file = paste0(tmpFile, ".gz"))

@@ -11,6 +11,9 @@ rs_create_table(.data, dbcon, table_name)
 
 \item{table_name}{\code{character}}
 }
+\value{
+The column names that redshift actually ended up using
+}
 \description{
 Create redshift table
 }
