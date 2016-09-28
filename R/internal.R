@@ -19,7 +19,8 @@ uploadToS3 <- function(data, bucket, split_files) {
   }
 
   splitted <- suppressWarnings(split(data, seq(1:split_files)))
-  parallel::mclapply(1:split_files, function(i) {
+  #shared state in boto means that this can't go parallel at this time, small files choke it
+  lapply(1:split_files, function(i) {
 
     part <- data.frame(splitted[i])
 
