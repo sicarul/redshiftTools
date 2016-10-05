@@ -67,7 +67,7 @@ rs_replace_table = function(
     } else {
       query_string <- "copy %s from 's3://%s/%s.' region '%s' truncatecolumns acceptinvchars as '^' escape delimiter '|' gzip ignoreheader 1 emptyasnull credentials 'aws_access_key_id=%s;aws_secret_access_key=%s';"
     }
-    res1 <- queryDo(dbcon, sprintf(query_string,
+    queryDo(dbcon, sprintf(query_string,
                            tableName,
                            bucket,
                            prefix,
@@ -77,10 +77,7 @@ rs_replace_table = function(
     ))
 
       message("Committing changes")
-      res2 <- queryDo(dbcon, "COMMIT;")
-      if (grepl("Could not create executecopy", res1) || grepl("Could not create executecopy", res2)) {
-        stop("Copy failure")
-      }
+      queryDo(dbcon, "COMMIT;")
       return(TRUE)
   }, warning = function(w) {
     print(w)
