@@ -19,7 +19,8 @@ uploadToS3 <- function(data, bucket, split_files) {
   }
 
   splitted <- suppressWarnings(split(data, seq(1:split_files)))
-  parallel::mclapply(1:split_files, function(i) {
+  #shared state in boto means that this can't go parallel at this time, small files choke it
+  lapply(1:split_files, function(i) {
 
     part <- data.frame(splitted[i])
 
@@ -44,6 +45,7 @@ uploadToS3 <- function(data, bucket, split_files) {
     s3 <- switch(bucket,
            `zapier-data-science-storage` = data_science_storage_s3(),
            `data-monolith-etl` = data_monolith_etl_s3(),
+           `data-monolith-staging` = data_monolith_staging_s3(),
           data_science_storage_s3()
     )
     s3$set_file(object = s3Name, file = paste0(tmpFile, ".gz"))
