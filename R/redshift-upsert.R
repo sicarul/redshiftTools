@@ -64,10 +64,10 @@ rs_upsert_table = function(
   result <- tryCatch({
     stageTable <- paste0(sample(letters, 32, replace=TRUE), collapse = "")
 
-    queryDo(dbcon, sprintf("create temp table %s (like %s)", stageTable, tableName))
+    res1 <- queryDo(dbcon, sprintf("create temp table %s (like %s)", stageTable, tableName))
 
     message("Copying data from S3 into Redshift")
-    queryDo(dbcon, sprintf("copy %s from 's3://%s/%s.' region '%s' truncatecolumns acceptinvchars as '^' escape delimiter '|' removequotes gzip ignoreheader 1 emptyasnull credentials 'aws_access_key_id=%s;aws_secret_access_key=%s';",
+    res2 <- queryDo(dbcon, sprintf("copy %s from 's3://%s/%s.' region '%s' truncatecolumns acceptinvchars as '^' escape delimiter '|' removequotes gzip ignoreheader 1 emptyasnull credentials 'aws_access_key_id=%s;aws_secret_access_key=%s';",
                                            stageTable,
                                            bucket,
                                            prefix,
@@ -80,7 +80,7 @@ rs_upsert_table = function(
       message("Deleting rows with same keys")
       keysCond <- paste(stageTable,".", keys, "=", tableName, ".", keys, sep="")
       keysWhere <- sub(" and $", "", paste0(keysCond, collapse="", sep=" and "))
-      queryDo(dbcon, sprintf('delete from %s using %s where %s;',
+      res3 <- queryDo(dbcon, sprintf('delete from %s using %s where %s;',
                                              tableName,
                                              stageTable,
                                              keysWhere
@@ -88,12 +88,19 @@ rs_upsert_table = function(
     }
     message("Insert new rows")
 
-    queryDo(dbcon, sprintf('insert into %s (select * from %s);', tableName, stageTable))
+    res4 <- queryDo(dbcon, sprintf('insert into %s (select * from %s);', tableName, stageTable))
 
-    queryDo(dbcon, sprintf("drop table %s;", stageTable))
+    res5 <- queryDo(dbcon, sprintf("drop table %s;", stageTable))
 
     message("Commiting")
-    queryDo(dbcon, "COMMIT;")
+    res6 <- queryDo(dbcon, "COMMIT;")
+    if (grepl("Could not create executecopy", res1) ||
+      grepl("Could not create executecopy", res2) ||
+      grepl("Could not create executecopy", res3) ||
+      grepl("Could not create executecopy", res4) ||
+      grepl("Could not create executecopy", res5)) {
+      stop("Copy failure")
+    }
     return(TRUE)
   }, warning = function(w) {
     message(w)
