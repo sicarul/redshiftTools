@@ -68,6 +68,7 @@ queryDo <- function(dbcon, query){
   dbGetQuery(dbcon, query)
 }
 
+#' @importFrom whisker whisker.render
 fix_column_order <- function(d, dbcon, table_name) {
   if (!DBI::dbExistsTable(dbcon, table_name)) {
     stop(table_name, " does not exist")
