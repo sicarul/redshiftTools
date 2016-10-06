@@ -85,14 +85,17 @@ rs_replace_table = function(
 
       message("Committing changes")
       queryDo(dbcon, "COMMIT;")
-      return(TRUE)
+      TRUE
   }, warning = function(w) {
     print(w)
   }, error = function(e) {
       message(e$message)
       queryDo(dbcon, 'ROLLBACK;')
       message("Rollback complete")
-      return(FALSE)
+      FALSE
   })
+  if (is.null(result)) {
+    stop("A redshift error occured")
+  }
   return (result)
 }

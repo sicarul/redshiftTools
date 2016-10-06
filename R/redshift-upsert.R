@@ -95,14 +95,16 @@ rs_upsert_table = function(
 
     message("Commiting")
     queryDo(dbcon, "COMMIT;")
-    return(TRUE)
+    TRUE
   }, warning = function(w) {
     message(w)
   }, error = function(e) {
     message(e$message)
     queryDo(dbcon, 'ROLLBACK;')
-    return(FALSE)
+    FALSE
   })
-
+  if (is.null(result)) {
+    stop("A redshift error occured")
+  }
   return (result)
 }
