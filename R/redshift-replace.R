@@ -35,7 +35,8 @@ rs_replace_table = function(
   region = Sys.getenv('AWS_DEFAULT_REGION'),
   access_key = Sys.getenv('AWS_ACCESS_KEY_ID'),
   secret_key = Sys.getenv('AWS_SECRET_ACCESS_KEY'),
-  remove_quotes = TRUE
+  remove_quotes = TRUE,
+  strict = TRUE
 ) {
   Sys.setenv('AWS_DEFAULT_REGION'=region)
   Sys.setenv('AWS_ACCESS_KEY_ID'=access_key)
@@ -49,7 +50,7 @@ rs_replace_table = function(
   }
 
   split_files <- min(split_files, nrow(data))
-  data <- fix_column_order(data, dbcon, table_name = tableName)
+  data <- fix_column_order(data, dbcon, table_name = tableName, strict = strict)
   prefix <- uploadToS3(data, bucket, split_files)
   on.exit({
     print("Deleting temporary files from S3 bucket")
@@ -60,6 +61,7 @@ rs_replace_table = function(
     message("Beginning transaction")
     if ("pqConnection" %in% class(dbcon)) {
       DBI::dbBegin(dbcon)
+      warning("pqConnection is going to give you a bad time")
     } else {
       queryDo(dbcon, "BEGIN;")
     }
