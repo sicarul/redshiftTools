@@ -77,6 +77,8 @@ fix_column_order <- function(d, dbcon, table_name) {
   FROM pg_table_def
   WHERE tablename = '{{table_name}}'
   AND schemaname = 'public'", list(table_name = table_name)))$column
+  #redshift doesn't respect case
+  names(d) <- tolower(names(d))
   if ((!all(names(d)) %in% column_names) | (column_names %in% !all(names(d)))) {
     stop("Columns are missing from either redshift or the data")
   }
