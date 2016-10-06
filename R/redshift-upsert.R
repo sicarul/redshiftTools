@@ -40,7 +40,8 @@ rs_upsert_table = function(
   bucket=Sys.getenv('AWS_BUCKET_NAME'),
   region=Sys.getenv('AWS_DEFAULT_REGION'),
   access_key=Sys.getenv('AWS_ACCESS_KEY_ID'),
-  secret_key=Sys.getenv('AWS_SECRET_ACCESS_KEY')
+  secret_key=Sys.getenv('AWS_SECRET_ACCESS_KEY'),
+  strict = FALSE
 ) {
 
   Sys.setenv('AWS_DEFAULT_REGION'=region)
@@ -55,7 +56,7 @@ rs_upsert_table = function(
   }
   split_files <- min(split_files, nrow(data))
 
-  data <- fix_column_order(data, dbcon, table_name = tableName)
+  data <- fix_column_order(data, dbcon, table_name = tableName, strict = strict)
   prefix <- uploadToS3(data, bucket, split_files)
   on.exit({
     message("Deleting temporary files from S3 bucket")

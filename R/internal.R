@@ -68,18 +68,37 @@ queryDo <- function(dbcon, query){
   dbGetQuery(dbcon, query)
 }
 
+get_table_schema <- function(dbcon, table) {
+  dbGetQuery(dbcon, whisker.render("SELECT *
+  FROM pg_table_def
+  WHERE tablename = '{{table_name}}'
+  AND schemaname = 'public'", list(table_name = table)))
+}
+
 #' @importFrom whisker whisker.render
-fix_column_order <- function(d, dbcon, table_name) {
+#' @importFrom DBI dbGetQuery
+fix_column_order <- function(d, dbcon, table_name, strict = TRUE) {
   if (!DBI::dbExistsTable(dbcon, table_name)) {
     stop(table_name, " does not exist")
   }
-  column_names <- dbGetQuery(dbcon, whisker.render("SELECT *
-  FROM pg_table_def
-  WHERE tablename = '{{table_name}}'
-  AND schemaname = 'public'", list(table_name = table_name)))$column
+  column_names <- get_table_schema(dbcon, table_name)$column
   #redshift doesn't respect case
   names(d) <- tolower(names(d))
-  if ((!all(names(d)) %in% column_names) | (column_names %in% !all(names(d)))) {
+  if (!strict) {
+    # add columns to redshift db
+    for (missing_column in names(d)[names(d) %!in% column_names]) {
+      rs_type <- identify_rs_types(d %>% select_(.dots = missing_column))
+      rs_add_column(dbcon, table_name = table_name, column_name = missing_column, redshift_type = rs_type)
+      column_names <- get_table_schema(dbcon, table_name)$column
+    }
+    #add columns to data
+    for (missing_column in column_names[column_names %!in% names(d)]) {
+      d <- d %>% mutate_(.dots = setNames(list("NA"), missing_column))
+    }
+  }
+  if ((!all(names(d) %in% column_names) || !all(column_names %in% names(d)))) {
+    message("Names in d but not in column names: ", paste0(names(d)[names(d) %!in% column_names], collapse = ", "))
+    message("Names in column_names but not in d: ", paste0(column_names[column_names %!in% names(d)], collapse = ", "))
     stop("Columns are missing from either redshift or the data")
   }
   d %>% select_(.dots = column_names)

@@ -1,10 +1,4 @@
-#' Create redshift table
-#' @param .data \code{data.frame}
-#' @param table_name \code{character}
-#'
-#' @return The column names that redshift actually ended up using
-#' @export
-rs_create_table <- function(.data, dbcon, table_name) {
+identify_rs_types <- function(.data) {
   classes <- lapply(.data, class)
   classes_first_pass <- lapply(classes, function(x) {
     if (all(c("POSIXct", "POSIXt") %in% x)) {
@@ -20,7 +14,17 @@ rs_create_table <- function(.data, dbcon, table_name) {
          numeric = "FLOAT8",
          integer = "BIGINT",
          character = "VARCHAR(255)")
+  return(data_types)
+}
 
+#' Create redshift table
+#' @param .data \code{data.frame}
+#' @param table_name \code{character}
+#'
+#' @return The column names that redshift actually ended up using
+#' @export
+rs_create_table <- function(.data, dbcon, table_name) {
+  data_types <- identify_rs_types(.data)
   # Identify and mutate column names
   column_names <- names(.data)
   column_name_is_reserved <- column_names %in% tolower(RESERVED_WORDS)
