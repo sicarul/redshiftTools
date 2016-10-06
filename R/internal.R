@@ -68,6 +68,20 @@ queryDo <- function(dbcon, query){
   dbGetQuery(dbcon, query)
 }
 
+fix_column_order <- function(d, dbcon, table_name) {
+  if (!DBI::dbExistsTable(dbcon, table_name)) {
+    stop(table_name, " does not exist")
+  }
+  column_names <- dbGetQuery(dbcon, whisker.render("SELECT *
+  FROM pg_table_def
+  WHERE tablename = '{{table_name}}'
+  AND schemaname = 'public'", list(table_name = table_name)))$column
+  if ((!all(names(d)) %in% column_names) | (column_names %in% !all(names(d)))) {
+    stop("Columns are missing from either redshift or the data")
+  }
+  d %>% select_(.dots = column_names)
+}
+
 RESERVED_WORDS <- readLines(textConnection("AES128
 AES256
 ALL

@@ -49,6 +49,7 @@ rs_replace_table = function(
   }
 
   split_files <- min(split_files, nrow(data))
+  data <- fix_column_order(data, dbcon, table_name = tableName)
   prefix <- uploadToS3(data, bucket, split_files)
   on.exit({
     print("Deleting temporary files from S3 bucket")
@@ -57,8 +58,14 @@ rs_replace_table = function(
 
   result = tryCatch({
     message("Beginning transaction")
-    queryDo(dbcon, "BEGIN;")
+    if ("pqConnection" %in% class(dbcon)) {
+      DBI::dbBegin(dbcon)
+    } else {
+      queryDo(dbcon, "BEGIN;")
+    }
+
     message("Truncating target table")
+
     queryDo(dbcon, sprintf("truncate table %s", tableName))
 
     message("Copying data from S3 into Redshift")

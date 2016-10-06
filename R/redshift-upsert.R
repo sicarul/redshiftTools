@@ -55,6 +55,7 @@ rs_upsert_table = function(
   }
   split_files <- min(split_files, nrow(data))
 
+  data <- fix_column_order(data, dbcon, table_name = tableName)
   prefix <- uploadToS3(data, bucket, split_files)
   on.exit({
     message("Deleting temporary files from S3 bucket")
