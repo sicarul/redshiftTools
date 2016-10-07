@@ -1,3 +1,5 @@
+
+
 # Internal utility functions used by the redshift tools
 
 #' @importFrom "aws.s3" "put_object" "bucket_exists"
@@ -101,7 +103,7 @@ fix_column_order <- function(d, dbcon, table_name, strict = TRUE) {
     message("Names in column_names but not in d: ", paste0(column_names[column_names %!in% names(d)], collapse = ", "))
     stop("Columns are missing from either redshift or the data")
   }
-  d %>% select_(.dots = column_names)
+  d %>% select_(.dots = paste0("`",column_names, "`"))
 }
 
 RESERVED_WORDS <- readLines(textConnection("AES128
