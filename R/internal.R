@@ -84,6 +84,8 @@ fix_column_order <- function(d, dbcon, table_name, strict = TRUE) {
     stop(table_name, " does not exist")
   }
   column_names <- get_table_schema(dbcon, table_name)$column
+  # we want to ignore the rw_ prefix we add, because we add that dynamically at time of
+  column_names <- gsub("rw_", "", column_names, fixed = TRUE)
   #redshift doesn't respect case
   names(d) <- tolower(names(d))
   if (!strict) {
