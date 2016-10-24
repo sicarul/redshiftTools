@@ -10,13 +10,21 @@ test_that(
   "When the table exists but is empty, rs_upsert_table works", {
     uploaded_mtcars <- function() { DBI::dbGetQuery(rs$con, "select * from mtcars_with_id") }
     expect_equal(0, nrow(uploaded_mtcars()))
-    expect_true(suppressMessages({
+    expect_null(suppressMessages({
       rs_upsert_table(mtcars_with_id, rs$con, "mtcars_with_id", keys = "id") }
     ))
+    expect_true(suppressMessages({
+      # since this is upsert and we're giving a key, this operation should not
+      # duplicate rows.
+      transaction(.data = mtcars_with_id,
+                  .dbcon = rs$con,
+                  .function_sequence = list(function(...) { rs_upsert_table(keys = "id", ...) })
+      )
+    }))
     expect_equal(dim(uploaded_mtcars()), dim(mtcars_with_id))
     DBI::dbGetQuery(rs$con, "delete from mtcars_with_id where mpg > 20")
     expect_equal(dim(uploaded_mtcars()), dim(mtcars_with_id[!mtcars_with_id$mpg > 20, ]))
-    expect_true(suppressMessages({
+    expect_null(suppressMessages({
       rs_upsert_table(mtcars_with_id, rs$con, "mtcars_with_id",
                       key = "id")
     }))

@@ -7,7 +7,15 @@ rs_create_table(.data = mtcars, dbcon = rs$con, table_name = "mtcars")
 test_that(
   "The table mtcars can be replaced on Redshift", {
     uploaded_mtcars <- function() { DBI::dbGetQuery(rs$con, "select * from mtcars") }
-    expect_true(suppressMessages({ rs_replace_table(mtcars, rs$con, "mtcars") }))
+    expect_null(suppressMessages({ rs_replace_table(mtcars, rs$con, "mtcars") }))
+    expect_true(suppressMessages({
+      transaction(.data = mtcars,
+                  .dbcon = rs$con,
+                  .function_sequence = list(
+                    function(...) { rs_replace_table(tableName = "mtcars", ...) }
+                  )
+      )
+    }))
     expect_equal(uploaded_mtcars() %>% names(), names(mtcars))
     expect_equal(dim(uploaded_mtcars()), dim(mtcars))
   }
