@@ -72,7 +72,7 @@ uploadToS3 <- function(data, bucket, split_files) {
 
     system(paste("gzip -f", tmpFile))
 
-    print(paste("Uploading", s3Name))
+    message(paste("Uploading", s3Name))
     s3 <- switch(bucket,
            `zapier-data-science-storage` = data_science_storage_s3(),
            `data-monolith-etl` = data_monolith_etl_s3(),
