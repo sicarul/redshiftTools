@@ -47,10 +47,6 @@ rs_upsert_table = function(
   strict = FALSE
 ) {
 
-  Sys.setenv('AWS_DEFAULT_REGION'=region)
-  Sys.setenv('AWS_ACCESS_KEY_ID'=access_key)
-  Sys.setenv('AWS_SECRET_ACCESS_KEY'=secret_key)
-
   if(missing(split_files)){
     message("Getting number of slices from Redshift")
     slices = DBI::dbGetQuery(dbcon,"select count(*) from stv_slices")
