@@ -26,7 +26,7 @@
 #'
 #' }
 #' @export
-rs_replace_table = function(
+rs_replace_table <- function(
   data,
   dbcon,
   tableName,
@@ -36,7 +36,8 @@ rs_replace_table = function(
   access_key = Sys.getenv('AWS_ACCESS_KEY_ID'),
   secret_key = Sys.getenv('AWS_SECRET_ACCESS_KEY'),
   remove_quotes = TRUE,
-  strict = TRUE
+  strict = TRUE,
+  use_transaction = TRUE
 ) {
 
   if(missing(split_files)){
@@ -46,26 +47,41 @@ rs_replace_table = function(
     message(sprintf("%s slices detected, will split into %s files", slices, split_files))
   }
 
-  split_files <- min(split_files, nrow(data))
-  data <- fix_column_order(data, dbcon, table_name = tableName, strict = strict)
-  prefix <- uploadToS3(data, bucket, split_files)
-  on.exit({
-    message("Deleting temporary files from S3 bucket")
-    deletePrefix(prefix, bucket, split_files)
-  })
-  message("Truncating target table")
-  queryDo(dbcon, sprintf("truncate table %s", tableName))
-  if(remove_quotes) {
-    query_string <- "copy %s from 's3://%s/%s.' region '%s' truncatecolumns acceptinvchars as '^' escape delimiter '|' removequotes gzip ignoreheader 1 emptyasnull credentials 'aws_access_key_id=%s;aws_secret_access_key=%s';"
-  } else {
-    query_string <- "copy %s from 's3://%s/%s.' region '%s' truncatecolumns acceptinvchars as '^' escape delimiter '|' gzip ignoreheader 1 emptyasnull credentials 'aws_access_key_id=%s;aws_secret_access_key=%s';"
+  # this functon is only intended in the processs of control flow
+  # the occurs immediately after. This function does pretty much
+  # all the work. it's not a pure function!
+  replace <- function(data, dbcon) {
+
+    split_files <- min(split_files, nrow(data))
+    data <- fix_column_order(data, dbcon, table_name = tableName, strict = strict)
+    prefix <- uploadToS3(data, bucket, split_files)
+    on.exit({
+      message("Deleting temporary files from S3 bucket")
+      deletePrefix(prefix, bucket, split_files)
+    })
+    message("Truncating target table")
+    queryDo(dbcon, sprintf("truncate table %s", tableName))
+    if(remove_quotes) {
+      query_string <- "copy %s from 's3://%s/%s.' region '%s' truncatecolumns acceptinvchars as '^' escape delimiter '|' removequotes gzip ignoreheader 1 emptyasnull credentials 'aws_access_key_id=%s;aws_secret_access_key=%s';"
+    } else {
+      query_string <- "copy %s from 's3://%s/%s.' region '%s' truncatecolumns acceptinvchars as '^' escape delimiter '|' gzip ignoreheader 1 emptyasnull credentials 'aws_access_key_id=%s;aws_secret_access_key=%s';"
+    }
+    queryDo(dbcon, sprintf(query_string,
+                           tableName,
+                           bucket,
+                           prefix,
+                           region,
+                           access_key,
+                           secret_key
+    ))
   }
-  queryDo(dbcon, sprintf(query_string,
-                         tableName,
-                         bucket,
-                         prefix,
-                         region,
-                         access_key,
-                         secret_key
-  ))
+
+  if(use_transaction) {
+    transaction(.data = data,
+                .dbcon = dbcon,
+                list(function(...) { replace(data, dbcon) })
+    )
+  } else {
+    replace(data, dbcon)
+  }
 }

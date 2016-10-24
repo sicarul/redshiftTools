@@ -11,7 +11,7 @@ transaction(.data, .dbcon, .function_sequence)
 
 \item{.dbcon}{a DBI connection}
 
-\item{.function_sequence}{a list of functions to apply}
+\item{.function_sequence}{a list of functions to apply, BEWARE the order matters. They'll be run head to tail.}
 }
 \value{
 boolean

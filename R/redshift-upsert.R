@@ -38,13 +38,14 @@ rs_upsert_table = function(
   data,
   dbcon,
   tableName,
-  keys,
+  keys = NULL,
   split_files,
   bucket=Sys.getenv('AWS_BUCKET_NAME'),
   region=Sys.getenv('AWS_DEFAULT_REGION'),
   access_key=Sys.getenv('AWS_ACCESS_KEY_ID'),
   secret_key=Sys.getenv('AWS_SECRET_ACCESS_KEY'),
-  strict = FALSE
+  strict = FALSE,
+  use_transaction = TRUE
 ) {
 
   if(missing(split_files)){
@@ -53,40 +54,54 @@ rs_upsert_table = function(
     split_files = unlist(slices[1]*4)
     message(sprintf("%s slices detected, will split into %s files", slices, split_files))
   }
-  split_files <- min(split_files, nrow(data))
+  # this functon is only intended in the processs of control flow
+  # the occurs immediately after. This function does pretty much
+  # all the work. it's not a pure function!
+  upsert <- function(data, dbcon, keys) {
+    split_files <- min(split_files, nrow(data))
 
-  data <- fix_column_order(data, dbcon, table_name = tableName, strict = strict)
-  prefix <- uploadToS3(data, bucket, split_files)
-  on.exit({
-    message("Deleting temporary files from S3 bucket")
-    deletePrefix(prefix, bucket, split_files)
-  })
-  stageTable <- paste0(sample(letters, 32, replace=TRUE), collapse = "")
+    data <- fix_column_order(data, dbcon, table_name = tableName, strict = strict)
+    prefix <- uploadToS3(data, bucket, split_files)
+    on.exit({
+      message("Deleting temporary files from S3 bucket")
+      deletePrefix(prefix, bucket, split_files)
+    })
+    stageTable <- paste0(sample(letters, 32, replace=TRUE), collapse = "")
 
-  DBI::dbGetQuery(dbcon, sprintf("create temp table %s (like %s)", stageTable, tableName))
+    DBI::dbGetQuery(dbcon, sprintf("create temp table %s (like %s)", stageTable, tableName))
 
-  message("Copying data from S3 into Redshift")
-  DBI::dbGetQuery(dbcon, sprintf("copy %s from 's3://%s/%s.' region '%s' truncatecolumns acceptinvchars as '^' escape delimiter '|' removequotes gzip ignoreheader 1 emptyasnull credentials 'aws_access_key_id=%s;aws_secret_access_key=%s';",
-                                 stageTable,
-                                 bucket,
-                                 prefix,
-                                 region,
-                                 access_key,
-                                 secret_key
-  ))
-
-  if(!missing(keys)){
-    message("Deleting rows with same keys")
-    keysCond <- paste(stageTable,".", keys, "=", tableName, ".", keys, sep="")
-    keysWhere <- sub(" and $", "", paste0(keysCond, collapse="", sep=" and "))
-    DBI::dbGetQuery(dbcon, sprintf('delete from %s using %s where %s;',
-                                   tableName,
+    message("Copying data from S3 into Redshift")
+    DBI::dbGetQuery(dbcon, sprintf("copy %s from 's3://%s/%s.' region '%s' truncatecolumns acceptinvchars as '^' escape delimiter '|' removequotes gzip ignoreheader 1 emptyasnull credentials 'aws_access_key_id=%s;aws_secret_access_key=%s';",
                                    stageTable,
-                                   keysWhere
+                                   bucket,
+                                   prefix,
+                                   region,
+                                   access_key,
+                                   secret_key
     ))
+
+    if(!is.null(keys)) {
+      message("Deleting rows with same keys")
+      keysCond <- paste(stageTable,".", keys, "=", tableName, ".", keys, sep="")
+      keysWhere <- sub(" and $", "", paste0(keysCond, collapse="", sep=" and "))
+      DBI::dbGetQuery(dbcon, sprintf('delete from %s using %s where %s;',
+                                     tableName,
+                                     stageTable,
+                                     keysWhere
+      ))
+    }
+
+    message("Insert new rows")
+    DBI::dbGetQuery(dbcon, sprintf('insert into %s (select * from %s);', tableName, stageTable))
+    DBI::dbGetQuery(dbcon, sprintf("drop table %s;", stageTable))
   }
 
-  message("Insert new rows")
-  DBI::dbGetQuery(dbcon, sprintf('insert into %s (select * from %s);', tableName, stageTable))
-  DBI::dbGetQuery(dbcon, sprintf("drop table %s;", stageTable))
+  if(use_transaction) {
+    transaction(.data = data,
+                .dbcon = dbcon,
+                list(function(...) { upsert(data, dbcon, keys) })
+    )
+  } else {
+    upsert(data, dbcon, keys)
+  }
 }

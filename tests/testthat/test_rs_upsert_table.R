@@ -11,6 +11,9 @@ test_that(
     uploaded_mtcars <- function() { DBI::dbGetQuery(rs$con, "select * from mtcars_with_id") }
     expect_equal(0, nrow(uploaded_mtcars()))
     expect_null(suppressMessages({
+      rs_upsert_table(mtcars_with_id, rs$con, "mtcars_with_id", keys = "id", use_transaction = FALSE) }
+    ))
+    expect_true(suppressMessages({
       rs_upsert_table(mtcars_with_id, rs$con, "mtcars_with_id", keys = "id") }
     ))
     expect_true(suppressMessages({
@@ -18,17 +21,18 @@ test_that(
       # duplicate rows.
       transaction(.data = mtcars_with_id,
                   .dbcon = rs$con,
-                  .function_sequence = list(function(...) { rs_upsert_table(keys = "id", ...) })
+                  .function_sequence = list(function(...) { rs_upsert_table(tableName = "mtcars_with_id", keys = "id", ...) })
       )
     }))
     expect_equal(dim(uploaded_mtcars()), dim(mtcars_with_id))
     DBI::dbGetQuery(rs$con, "delete from mtcars_with_id where mpg > 20")
     expect_equal(dim(uploaded_mtcars()), dim(mtcars_with_id[!mtcars_with_id$mpg > 20, ]))
-    expect_null(suppressMessages({
-      rs_upsert_table(mtcars_with_id, rs$con, "mtcars_with_id",
-                      key = "id")
+    expect_true(suppressMessages({
+      rs_upsert_table(mtcars_with_id, rs$con, "mtcars_with_id", key = "id")
     }))
-
+    expect_null(suppressMessages({
+      rs_upsert_table(mtcars_with_id, rs$con, "mtcars_with_id", key = "id", use_transaction = FALSE)
+    }))
     expect_equal(dim(uploaded_mtcars()), dim(mtcars_with_id))
   }
 )

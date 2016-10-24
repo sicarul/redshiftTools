@@ -4,7 +4,7 @@
 #'
 #' @return The column names that redshift actually ended up using
 #' @export
-rs_create_table <- function(.data, dbcon, table_name) {
+rs_create_table <- function(.data, dbcon, table_name, ...) {
   data_types <- identify_rs_types(.data)
   # Identify and mutate column names
   column_names <- names(.data)

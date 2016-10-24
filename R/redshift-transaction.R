@@ -2,7 +2,7 @@
 #'
 #' @param .data a data.frame
 #' @param .dbcon a DBI connection
-#' @param .function_sequence a list of functions to apply
+#' @param .function_sequence a list of functions to apply, BEWARE the order matters. They'll be run head to tail.
 #'
 #' @return boolean
 #' @export
@@ -31,7 +31,7 @@ transaction <- function(.data, .dbcon, .function_sequence) {
     }
 
     lapply(.function_sequence, function(.f){
-      .f(.data, .dbcon)
+      .f(.data, .dbcon, use_transaction = FALSE)
     })
 
     message("Committing changes")
