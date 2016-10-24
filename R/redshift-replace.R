@@ -53,48 +53,19 @@ rs_replace_table = function(
     message("Deleting temporary files from S3 bucket")
     deletePrefix(prefix, bucket, split_files)
   })
-
-  result = tryCatch({
-    message("Beginning transaction")
-    if ("pqConnection" %in% class(dbcon)) {
-      DBI::dbBegin(dbcon)
-      warning("pqConnection is going to give you a bad time")
-    } else {
-      queryDo(dbcon, "BEGIN;")
-    }
-
-    message("Truncating target table")
-
-    queryDo(dbcon, sprintf("truncate table %s", tableName))
-
-    message("Copying data from S3 into Redshift")
-    if(remove_quotes) {
-      query_string <- "copy %s from 's3://%s/%s.' region '%s' truncatecolumns acceptinvchars as '^' escape delimiter '|' removequotes gzip ignoreheader 1 emptyasnull credentials 'aws_access_key_id=%s;aws_secret_access_key=%s';"
-    } else {
-      query_string <- "copy %s from 's3://%s/%s.' region '%s' truncatecolumns acceptinvchars as '^' escape delimiter '|' gzip ignoreheader 1 emptyasnull credentials 'aws_access_key_id=%s;aws_secret_access_key=%s';"
-    }
-    queryDo(dbcon, sprintf(query_string,
-                           tableName,
-                           bucket,
-                           prefix,
-                           region,
-                           access_key,
-                           secret_key
-    ))
-
-      message("Committing changes")
-      queryDo(dbcon, "COMMIT;")
-      TRUE
-  }, warning = function(w) {
-    warning(w)
-  }, error = function(e) {
-      message(e$message)
-      queryDo(dbcon, 'ROLLBACK;')
-      message("Rollback complete")
-      FALSE
-  })
-  if (is.null(result)) {
-    stop("A redshift error occured")
+  message("Truncating target table")
+  queryDo(dbcon, sprintf("truncate table %s", tableName))
+  if(remove_quotes) {
+    query_string <- "copy %s from 's3://%s/%s.' region '%s' truncatecolumns acceptinvchars as '^' escape delimiter '|' removequotes gzip ignoreheader 1 emptyasnull credentials 'aws_access_key_id=%s;aws_secret_access_key=%s';"
+  } else {
+    query_string <- "copy %s from 's3://%s/%s.' region '%s' truncatecolumns acceptinvchars as '^' escape delimiter '|' gzip ignoreheader 1 emptyasnull credentials 'aws_access_key_id=%s;aws_secret_access_key=%s';"
   }
-  return (result)
+  queryDo(dbcon, sprintf(query_string,
+                         tableName,
+                         bucket,
+                         prefix,
+                         region,
+                         access_key,
+                         secret_key
+  ))
 }

@@ -61,50 +61,32 @@ rs_upsert_table = function(
     message("Deleting temporary files from S3 bucket")
     deletePrefix(prefix, bucket, split_files)
   })
+  stageTable <- paste0(sample(letters, 32, replace=TRUE), collapse = "")
 
-  result <- tryCatch({
-    stageTable <- paste0(sample(letters, 32, replace=TRUE), collapse = "")
+  DBI::dbGetQuery(dbcon, sprintf("create temp table %s (like %s)", stageTable, tableName))
 
-    DBI::dbGetQuery(dbcon, sprintf("create temp table %s (like %s)", stageTable, tableName))
+  message("Copying data from S3 into Redshift")
+  DBI::dbGetQuery(dbcon, sprintf("copy %s from 's3://%s/%s.' region '%s' truncatecolumns acceptinvchars as '^' escape delimiter '|' removequotes gzip ignoreheader 1 emptyasnull credentials 'aws_access_key_id=%s;aws_secret_access_key=%s';",
+                                 stageTable,
+                                 bucket,
+                                 prefix,
+                                 region,
+                                 access_key,
+                                 secret_key
+  ))
 
-    message("Copying data from S3 into Redshift")
-    DBI::dbGetQuery(dbcon, sprintf("copy %s from 's3://%s/%s.' region '%s' truncatecolumns acceptinvchars as '^' escape delimiter '|' removequotes gzip ignoreheader 1 emptyasnull credentials 'aws_access_key_id=%s;aws_secret_access_key=%s';",
-                              stageTable,
-                              bucket,
-                              prefix,
-                              region,
-                              access_key,
-                              secret_key
+  if(!missing(keys)){
+    message("Deleting rows with same keys")
+    keysCond <- paste(stageTable,".", keys, "=", tableName, ".", keys, sep="")
+    keysWhere <- sub(" and $", "", paste0(keysCond, collapse="", sep=" and "))
+    DBI::dbGetQuery(dbcon, sprintf('delete from %s using %s where %s;',
+                                   tableName,
+                                   stageTable,
+                                   keysWhere
     ))
-
-    if(!missing(keys)){
-      message("Deleting rows with same keys")
-      keysCond <- paste(stageTable,".", keys, "=", tableName, ".", keys, sep="")
-      keysWhere <- sub(" and $", "", paste0(keysCond, collapse="", sep=" and "))
-      DBI::dbGetQuery(dbcon, sprintf('delete from %s using %s where %s;',
-                             tableName,
-                             stageTable,
-                             keysWhere
-      ))
-    }
-    message("Insert new rows")
-
-    DBI::dbGetQuery(dbcon, sprintf('insert into %s (select * from %s);', tableName, stageTable))
-
-    DBI::dbGetQuery(dbcon, sprintf("drop table %s;", stageTable))
-
-    message("Commiting")
-    DBI::dbGetQuery(dbcon, "COMMIT;")
-    TRUE
-  }, warning = function(w) {
-    message(w)
-  }, error = function(e) {
-    message(e$message)
-    DBI::dbGetQuery(dbcon, 'ROLLBACK;')
-    FALSE
-  })
-  if (is.null(result)) {
-    stop("A redshift error occured")
   }
-  return(result)
+
+  message("Insert new rows")
+  DBI::dbGetQuery(dbcon, sprintf('insert into %s (select * from %s);', tableName, stageTable))
+  DBI::dbGetQuery(dbcon, sprintf("drop table %s;", stageTable))
 }
