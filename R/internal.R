@@ -70,7 +70,7 @@ uploadToS3 <- function(data, bucket, split_files) {
                        # will return: Delimiter not found
                        eol = "|\n")
 
-    system(paste("gzip", tmpFile))
+    system(paste("gzip -f", tmpFile))
 
     print(paste("Uploading", s3Name))
     s3 <- switch(bucket,
