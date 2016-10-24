@@ -38,9 +38,9 @@ rs_replace_table = function(
   remove_quotes = TRUE,
   strict = TRUE
 ) {
-  Sys.setenv('AWS_DEFAULT_REGION'=region)
-  Sys.setenv('AWS_ACCESS_KEY_ID'=access_key)
-  Sys.setenv('AWS_SECRET_ACCESS_KEY'=secret_key)
+  Sys.setenv('AWS_DEFAULT_REGION' = region)
+  Sys.setenv('AWS_ACCESS_KEY_ID' = access_key)
+  Sys.setenv('AWS_SECRET_ACCESS_KEY' = secret_key)
 
   if(missing(split_files)){
     print("Getting number of slices from Redshift")
