@@ -43,17 +43,17 @@ rs_replace_table = function(
   Sys.setenv('AWS_SECRET_ACCESS_KEY' = secret_key)
 
   if(missing(split_files)){
-    print("Getting number of slices from Redshift")
+    message("Getting number of slices from Redshift")
     slices <- queryDo(dbcon,"select count(*) from stv_slices")
     split_files <- unlist(slices[1]*4)
-    print(sprintf("%s slices detected, will split into %s files", slices, split_files))
+    message(sprintf("%s slices detected, will split into %s files", slices, split_files))
   }
 
   split_files <- min(split_files, nrow(data))
   data <- fix_column_order(data, dbcon, table_name = tableName, strict = strict)
   prefix <- uploadToS3(data, bucket, split_files)
   on.exit({
-    print("Deleting temporary files from S3 bucket")
+    message("Deleting temporary files from S3 bucket")
     deletePrefix(prefix, bucket, split_files)
   })
 
@@ -89,7 +89,7 @@ rs_replace_table = function(
       queryDo(dbcon, "COMMIT;")
       TRUE
   }, warning = function(w) {
-    print(w)
+    warning(w)
   }, error = function(e) {
       message(e$message)
       queryDo(dbcon, 'ROLLBACK;')
