@@ -7,7 +7,11 @@
 transaction(.data, .dbcon, .function_sequence)
 }
 \arguments{
-\item{.function_sequence}{}
+\item{.data}{a data.frame}
+
+\item{.dbcon}{a DBI connection}
+
+\item{.function_sequence}{a list of functions to apply}
 }
 \value{
 boolean
