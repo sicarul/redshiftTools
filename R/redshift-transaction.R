@@ -1,8 +1,8 @@
 #' Issue commands within a single transaction block.
 #'
-#' @param .data
-#' @param .dbcon
-#' @param .function_sequence
+#' @param .data a data.frame
+#' @param .dbcon a DBI connection
+#' @param .function_sequence a list of functions to apply
 #'
 #' @return boolean
 #' @export
