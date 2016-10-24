@@ -1,4 +1,32 @@
-
+#' Translate the types of a given data.frame to Redshift types
+#'
+#' @param .data data.frame, tbl_df
+#'
+#' @return character
+#' @importFrom dplyr recode
+#'
+#' @examples
+#' \dontrun{redshiftTools:::identify_rs_types(mtcars)}
+#'
+identify_rs_types <- function(.data) {
+  classes <- lapply(.data, class)
+  classes_first_pass <- lapply(classes, function(x) {
+    if (all(c("POSIXct", "POSIXt") %in% x)) {
+      x <- "TIMESTAMP"
+    }
+    return(x)
+  })
+  if (any("factor" %in% classes_first_pass)) {
+    warning("one of the columns is a factor")
+  }
+  data_types <- recode(
+    unlist(classes_first_pass),
+    factor = "VARCHAR(255)",
+    numeric = "FLOAT8",
+    integer = "BIGINT",
+    character = "VARCHAR(255)")
+  return(data_types)
+}
 
 # Internal utility functions used by the redshift tools
 
