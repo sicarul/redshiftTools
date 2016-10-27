@@ -1,9 +1,38 @@
-
+#' Translate the types of a given data.frame to Redshift types
+#'
+#' @param .data data.frame, tbl_df
+#'
+#' @return character
+#' @importFrom dplyr recode
+#'
+#' @examples
+#' \dontrun{redshiftTools:::identify_rs_types(mtcars)}
+#'
+identify_rs_types <- function(.data) {
+  classes <- lapply(.data, class)
+  classes_first_pass <- lapply(classes, function(x) {
+    if (all(c("POSIXct", "POSIXt") %in% x)) {
+      x <- "TIMESTAMP"
+    }
+    return(x)
+  })
+  if (any("factor" %in% classes_first_pass)) {
+    warning("one of the columns is a factor")
+  }
+  data_types <- recode(
+    unlist(classes_first_pass),
+    factor = "VARCHAR(255)",
+    numeric = "FLOAT8",
+    integer = "BIGINT",
+    character = "VARCHAR(255)")
+  return(data_types)
+}
 
 # Internal utility functions used by the redshift tools
 
-#' @importFrom "aws.s3" "put_object" "bucket_exists"
-#' @importFrom "utils" "write.csv"
+#' @importFrom aws.s3 put_object bucket_exists
+#' @importFrom utils write.csv
+#' @importFrom zapieR data_science_storage_s3 data_monolith_etl_s3 data_monolith_staging_s3
 uploadToS3 <- function(data, bucket, split_files) {
 
   prefix = paste0(sample(letters, 32, replace = TRUE), collapse = "")
@@ -41,9 +70,9 @@ uploadToS3 <- function(data, bucket, split_files) {
                        # will return: Delimiter not found
                        eol = "|\n")
 
-    system(paste("gzip", tmpFile))
+    system(paste("gzip -f", tmpFile))
 
-    print(paste("Uploading", s3Name))
+    message(paste("Uploading", s3Name))
     s3 <- switch(bucket,
            `zapier-data-science-storage` = data_science_storage_s3(),
            `data-monolith-etl` = data_monolith_etl_s3(),
@@ -79,31 +108,35 @@ get_table_schema <- function(dbcon, table) {
 
 #' @importFrom whisker whisker.render
 #' @importFrom DBI dbGetQuery
+#' @importFrom dplyr select_
+#' @importFrom magrittr %>%
 fix_column_order <- function(d, dbcon, table_name, strict = TRUE) {
   if (!DBI::dbExistsTable(dbcon, table_name)) {
     stop(table_name, " does not exist")
   }
   column_names <- get_table_schema(dbcon, table_name)$column
+  # we want to ignore the rw_ prefix we add, because we add that dynamically at time of
+  column_names <- gsub("rw_", "", column_names, fixed = TRUE)
   #redshift doesn't respect case
   names(d) <- tolower(names(d))
   if (!strict) {
     # add columns to redshift db
-    for (missing_column in names(d)[names(d) %!in% column_names]) {
+    for (missing_column in names(d)[!(names(d) %in% column_names)]) {
       rs_type <- identify_rs_types(d %>% select_(.dots = missing_column))
       rs_add_column(dbcon, table_name = table_name, column_name = missing_column, redshift_type = rs_type)
       column_names <- get_table_schema(dbcon, table_name)$column
     }
     #add columns to data
-    for (missing_column in column_names[column_names %!in% names(d)]) {
+    for (missing_column in column_names[!(column_names %in% names(d))]) {
       d <- d %>% mutate_(.dots = setNames(list("NA"), missing_column))
     }
   }
   if ((!all(names(d) %in% column_names) || !all(column_names %in% names(d)))) {
-    message("Names in d but not in column names: ", paste0(names(d)[names(d) %!in% column_names], collapse = ", "))
-    message("Names in column_names but not in d: ", paste0(column_names[column_names %!in% names(d)], collapse = ", "))
+    message("Names in d but not in column names: ", paste0(names(d)[!(names(d) %in% column_names)], collapse = ", "))
+    message("Names in column_names but not in d: ", paste0(column_names[!(column_names %in% names(d))], collapse = ", "))
     stop("Columns are missing from either redshift or the data")
   }
-  d %>% select_(.dots = paste0("`",column_names, "`"))
+  d %>% select_(.dots = paste0("`", column_names, "`"))
 }
 
 RESERVED_WORDS <- readLines(textConnection("AES128

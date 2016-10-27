@@ -13,6 +13,9 @@
 #' @param region the region of the bucket. Will look for AWS_DEFAULT_REGION on environment if not specified.
 #' @param access_key the access key with permissions for the bucket. Will look for AWS_ACCESS_KEY_ID on environment if not specified.
 #' @param secret_key the secret key with permissions fot the bucket. Will look for AWS_SECRET_ACCESS_KEY on environment if not specified.
+#'
+#' @importFrom DBI dbGetQuery
+#'
 #' @examples
 #' library(DBI)
 #'
@@ -35,77 +38,70 @@ rs_upsert_table = function(
   data,
   dbcon,
   tableName,
-  keys,
+  keys = NULL,
   split_files,
   bucket=Sys.getenv('AWS_BUCKET_NAME'),
   region=Sys.getenv('AWS_DEFAULT_REGION'),
   access_key=Sys.getenv('AWS_ACCESS_KEY_ID'),
   secret_key=Sys.getenv('AWS_SECRET_ACCESS_KEY'),
-  strict = FALSE
+  strict = FALSE,
+  use_transaction = TRUE
 ) {
-
-  Sys.setenv('AWS_DEFAULT_REGION'=region)
-  Sys.setenv('AWS_ACCESS_KEY_ID'=access_key)
-  Sys.setenv('AWS_SECRET_ACCESS_KEY'=secret_key)
 
   if(missing(split_files)){
     message("Getting number of slices from Redshift")
-    slices = queryDo(dbcon,"select count(*) from stv_slices")
+    slices = DBI::dbGetQuery(dbcon,"select count(*) from stv_slices")
     split_files = unlist(slices[1]*4)
     message(sprintf("%s slices detected, will split into %s files", slices, split_files))
   }
-  split_files <- min(split_files, nrow(data))
+  # this functon is only intended in the processs of control flow
+  # the occurs immediately after. This function does pretty much
+  # all the work. it's not a pure function!
+  upsert <- function(data, dbcon, keys) {
+    split_files <- min(split_files, nrow(data))
 
-  data <- fix_column_order(data, dbcon, table_name = tableName, strict = strict)
-  prefix <- uploadToS3(data, bucket, split_files)
-  on.exit({
-    message("Deleting temporary files from S3 bucket")
-    deletePrefix(prefix, bucket, split_files)
-  })
-
-  result <- tryCatch({
+    data <- fix_column_order(data, dbcon, table_name = tableName, strict = strict)
+    prefix <- uploadToS3(data, bucket, split_files)
+    on.exit({
+      message("Deleting temporary files from S3 bucket")
+      deletePrefix(prefix, bucket, split_files)
+    })
     stageTable <- paste0(sample(letters, 32, replace=TRUE), collapse = "")
 
-    queryDo(dbcon, sprintf("create temp table %s (like %s)", stageTable, tableName))
+    DBI::dbGetQuery(dbcon, sprintf("create temp table %s (like %s)", stageTable, tableName))
 
     message("Copying data from S3 into Redshift")
-    queryDo(dbcon, sprintf("copy %s from 's3://%s/%s.' region '%s' truncatecolumns acceptinvchars as '^' escape delimiter '|' removequotes gzip ignoreheader 1 emptyasnull credentials 'aws_access_key_id=%s;aws_secret_access_key=%s';",
-                                           stageTable,
-                                           bucket,
-                                           prefix,
-                                           region,
-                                           access_key,
-                                           secret_key
+    DBI::dbGetQuery(dbcon, sprintf("copy %s from 's3://%s/%s.' region '%s' truncatecolumns acceptinvchars as '^' escape delimiter '|' removequotes gzip ignoreheader 1 emptyasnull credentials 'aws_access_key_id=%s;aws_secret_access_key=%s';",
+                                   stageTable,
+                                   bucket,
+                                   prefix,
+                                   region,
+                                   access_key,
+                                   secret_key
     ))
 
-    if(!missing(keys)){
+    if(!is.null(keys)) {
       message("Deleting rows with same keys")
       keysCond <- paste(stageTable,".", keys, "=", tableName, ".", keys, sep="")
       keysWhere <- sub(" and $", "", paste0(keysCond, collapse="", sep=" and "))
-      queryDo(dbcon, sprintf('delete from %s using %s where %s;',
-                                             tableName,
-                                             stageTable,
-                                             keysWhere
+      DBI::dbGetQuery(dbcon, sprintf('delete from %s using %s where %s;',
+                                     tableName,
+                                     stageTable,
+                                     keysWhere
       ))
     }
+
     message("Insert new rows")
-
-    queryDo(dbcon, sprintf('insert into %s (select * from %s);', tableName, stageTable))
-
-    queryDo(dbcon, sprintf("drop table %s;", stageTable))
-
-    message("Commiting")
-    queryDo(dbcon, "COMMIT;")
-    TRUE
-  }, warning = function(w) {
-    message(w)
-  }, error = function(e) {
-    message(e$message)
-    queryDo(dbcon, 'ROLLBACK;')
-    FALSE
-  })
-  if (is.null(result)) {
-    stop("A redshift error occured")
+    DBI::dbGetQuery(dbcon, sprintf('insert into %s (select * from %s);', tableName, stageTable))
+    DBI::dbGetQuery(dbcon, sprintf("drop table %s;", stageTable))
   }
-  return (result)
+
+  if(use_transaction) {
+    transaction(.data = data,
+                .dbcon = dbcon,
+                list(function(...) { upsert(data, dbcon, keys) })
+    )
+  } else {
+    upsert(data, dbcon, keys)
+  }
 }

@@ -26,7 +26,7 @@
 #'
 #' }
 #' @export
-rs_replace_table = function(
+rs_replace_table <- function(
   data,
   dbcon,
   tableName,
@@ -36,41 +36,31 @@ rs_replace_table = function(
   access_key = Sys.getenv('AWS_ACCESS_KEY_ID'),
   secret_key = Sys.getenv('AWS_SECRET_ACCESS_KEY'),
   remove_quotes = TRUE,
-  strict = TRUE
+  strict = TRUE,
+  use_transaction = TRUE
 ) {
-  Sys.setenv('AWS_DEFAULT_REGION'=region)
-  Sys.setenv('AWS_ACCESS_KEY_ID'=access_key)
-  Sys.setenv('AWS_SECRET_ACCESS_KEY'=secret_key)
 
   if(missing(split_files)){
-    print("Getting number of slices from Redshift")
+    message("Getting number of slices from Redshift")
     slices <- queryDo(dbcon,"select count(*) from stv_slices")
     split_files <- unlist(slices[1]*4)
-    print(sprintf("%s slices detected, will split into %s files", slices, split_files))
+    message(sprintf("%s slices detected, will split into %s files", slices, split_files))
   }
 
-  split_files <- min(split_files, nrow(data))
-  data <- fix_column_order(data, dbcon, table_name = tableName, strict = strict)
-  prefix <- uploadToS3(data, bucket, split_files)
-  on.exit({
-    print("Deleting temporary files from S3 bucket")
-    deletePrefix(prefix, bucket, split_files)
-  })
+  # this functon is only intended in the processs of control flow
+  # the occurs immediately after. This function does pretty much
+  # all the work. it's not a pure function!
+  replace <- function(data, dbcon) {
 
-  result = tryCatch({
-    message("Beginning transaction")
-    if ("pqConnection" %in% class(dbcon)) {
-      DBI::dbBegin(dbcon)
-      warning("pqConnection is going to give you a bad time")
-    } else {
-      queryDo(dbcon, "BEGIN;")
-    }
-
+    split_files <- min(split_files, nrow(data))
+    data <- fix_column_order(data, dbcon, table_name = tableName, strict = strict)
+    prefix <- uploadToS3(data, bucket, split_files)
+    on.exit({
+      message("Deleting temporary files from S3 bucket")
+      deletePrefix(prefix, bucket, split_files)
+    })
     message("Truncating target table")
-
     queryDo(dbcon, sprintf("truncate table %s", tableName))
-
-    message("Copying data from S3 into Redshift")
     if(remove_quotes) {
       query_string <- "copy %s from 's3://%s/%s.' region '%s' truncatecolumns acceptinvchars as '^' escape delimiter '|' removequotes gzip ignoreheader 1 emptyasnull credentials 'aws_access_key_id=%s;aws_secret_access_key=%s';"
     } else {
@@ -84,20 +74,14 @@ rs_replace_table = function(
                            access_key,
                            secret_key
     ))
-
-      message("Committing changes")
-      queryDo(dbcon, "COMMIT;")
-      TRUE
-  }, warning = function(w) {
-    print(w)
-  }, error = function(e) {
-      message(e$message)
-      queryDo(dbcon, 'ROLLBACK;')
-      message("Rollback complete")
-      FALSE
-  })
-  if (is.null(result)) {
-    stop("A redshift error occured")
   }
-  return (result)
+
+  if(use_transaction) {
+    transaction(.data = data,
+                .dbcon = dbcon,
+                list(function(...) { replace(data, dbcon) })
+    )
+  } else {
+    replace(data, dbcon)
+  }
 }

@@ -9,7 +9,7 @@ rs_replace_table(data, dbcon, tableName, split_files,
   region = Sys.getenv("AWS_DEFAULT_REGION"),
   access_key = Sys.getenv("AWS_ACCESS_KEY_ID"),
   secret_key = Sys.getenv("AWS_SECRET_ACCESS_KEY"), remove_quotes = TRUE,
-  strict = TRUE)
+  strict = TRUE, use_transaction = TRUE)
 }
 \arguments{
 \item{data}{a data frame}
