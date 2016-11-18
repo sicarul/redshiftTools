@@ -24,7 +24,8 @@ identify_rs_types <- function(.data) {
     factor = "VARCHAR(255)",
     numeric = "FLOAT8",
     integer = "BIGINT",
-    character = "VARCHAR(255)")
+    character = "VARCHAR(255)",
+    logical = "BOOLEAN")
   return(data_types)
 }
 
