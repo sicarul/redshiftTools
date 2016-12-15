@@ -62,9 +62,9 @@ rs_replace_table <- function(
     message("Truncating target table")
     queryDo(dbcon, sprintf("truncate table %s", tableName))
     if(remove_quotes) {
-      query_string <- "copy %s from 's3://%s/%s.' region '%s' truncatecolumns acceptinvchars as '^' escape delimiter '|' removequotes gzip ignoreheader 1 emptyasnull credentials 'aws_access_key_id=%s;aws_secret_access_key=%s';"
+      query_string <- "copy %s from 's3://%s/%s.' region '%s' truncatecolumns acceptinvchars as '^' escape delimiter '|' removequotes gzip ignoreheader 1 emptyasnull STATUPDATE ON COMPUPDATE ON credentials 'aws_access_key_id=%s;aws_secret_access_key=%s';"
     } else {
-      query_string <- "copy %s from 's3://%s/%s.' region '%s' truncatecolumns acceptinvchars as '^' escape delimiter '|' gzip ignoreheader 1 emptyasnull credentials 'aws_access_key_id=%s;aws_secret_access_key=%s';"
+      query_string <- "copy %s from 's3://%s/%s.' region '%s' truncatecolumns acceptinvchars as '^' escape delimiter '|' gzip ignoreheader 1 emptyasnull STATUPDATE ON COMPUPDATE ON credentials 'aws_access_key_id=%s;aws_secret_access_key=%s';"
     }
     queryDo(dbcon, sprintf(query_string,
                            tableName,
