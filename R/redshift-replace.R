@@ -26,6 +26,7 @@
 #'
 #' }
 #' @export
+#' @importFrom DBI dbExecute
 rs_replace_table <- function(
   data,
   dbcon,
@@ -66,7 +67,7 @@ rs_replace_table <- function(
     } else {
       query_string <- "copy %s from 's3://%s/%s.' region '%s' truncatecolumns acceptinvchars as '^' escape delimiter '|' gzip ignoreheader 1 emptyasnull STATUPDATE ON COMPUPDATE ON credentials 'aws_access_key_id=%s;aws_secret_access_key=%s';"
     }
-    queryDo(dbcon, sprintf(query_string,
+    DBI::dbExecute(dbcon, sprintf(query_string,
                            tableName,
                            bucket,
                            prefix,

@@ -35,13 +35,13 @@ transaction <- function(.data, .dbcon, .function_sequence) {
     })
 
     message("Committing changes")
-    DBI::dbGetQuery(.dbcon, "COMMIT;")
+    DBI::dbExecute(.dbcon, "COMMIT;")
     TRUE
   },
   warning = function(w) { warning(w) },
   error = function(e) {
     message(e$message)
-    DBI::dbGetQuery(.dbcon, 'ROLLBACK;')
+    DBI::dbExecute(.dbcon, 'ROLLBACK;')
     message("Rollback complete")
     FALSE
   })

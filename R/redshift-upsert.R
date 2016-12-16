@@ -15,6 +15,7 @@
 #' @param secret_key the secret key with permissions fot the bucket. Will look for AWS_SECRET_ACCESS_KEY on environment if not specified.
 #'
 #' @importFrom DBI dbGetQuery
+#' @importFrom DBI dbExecute
 #'
 #' @examples
 #' library(DBI)
@@ -71,7 +72,7 @@ rs_upsert_table = function(
     DBI::dbGetQuery(dbcon, sprintf("create temp table %s (like %s)", stageTable, tableName))
 
     message("Copying data from S3 into Redshift")
-    DBI::dbGetQuery(dbcon, sprintf("copy %s from 's3://%s/%s.' region '%s' truncatecolumns acceptinvchars as '^' escape delimiter '|' removequotes gzip ignoreheader 1 emptyasnull STATUPDATE ON COMPUPDATE ON credentials 'aws_access_key_id=%s;aws_secret_access_key=%s';",
+    DBI::dbExecute(dbcon, sprintf("copy %s from 's3://%s/%s.' region '%s' truncatecolumns acceptinvchars as '^' escape delimiter '|' removequotes gzip ignoreheader 1 emptyasnull STATUPDATE ON COMPUPDATE ON credentials 'aws_access_key_id=%s;aws_secret_access_key=%s';",
                                    stageTable,
                                    bucket,
                                    prefix,
@@ -84,7 +85,7 @@ rs_upsert_table = function(
       message("Deleting rows with same keys")
       keysCond <- paste(stageTable,".", keys, "=", tableName, ".", keys, sep="")
       keysWhere <- sub(" and $", "", paste0(keysCond, collapse="", sep=" and "))
-      DBI::dbGetQuery(dbcon, sprintf('delete from %s using %s where %s;',
+      DBI::dbExecute(dbcon, sprintf('delete from %s using %s where %s;',
                                      tableName,
                                      stageTable,
                                      keysWhere
@@ -92,8 +93,8 @@ rs_upsert_table = function(
     }
 
     message("Insert new rows")
-    DBI::dbGetQuery(dbcon, sprintf('insert into %s (select * from %s);', tableName, stageTable))
-    DBI::dbGetQuery(dbcon, sprintf("drop table %s;", stageTable))
+    DBI::dbExecute(dbcon, sprintf('insert into %s (select * from %s);', tableName, stageTable))
+    DBI::dbExecute(dbcon, sprintf("drop table %s;", stageTable))
   }
 
   if(use_transaction) {
