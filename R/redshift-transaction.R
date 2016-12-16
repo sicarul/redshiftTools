@@ -45,7 +45,7 @@ transaction <- function(.data, .dbcon, .function_sequence) {
     message("Rollback complete")
     FALSE
   })
-  if(is.null(result)) {
+  if(is.null(result) || !isTRUE(result)) {
     stop("A redshift error occured")
   }
   return(result)
