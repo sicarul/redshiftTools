@@ -291,3 +291,15 @@ WHERE
 WITH
 WITHOUT"))
 
+choose_number_of_splits <- function(data) {
+    message("Getting number of slices from Redshift")
+    slices <- queryDo(dbcon,"select count(*) from stv_slices")
+    split_files <- unlist(slices[1]*4)
+    # check for execessive fragmentation
+    rows_per_split <- nrow(data) / (slices[1] * 4)
+    if (rows_per_split < 1000) {
+      split_files <- slices[1]
+    }
+    message(sprintf("%s slices detected, will split into %s files", slices, split_files))
+  return(split_files)
+}

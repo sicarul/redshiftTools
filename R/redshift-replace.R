@@ -42,10 +42,7 @@ rs_replace_table <- function(
 ) {
 
   if(missing(split_files)){
-    message("Getting number of slices from Redshift")
-    slices <- queryDo(dbcon,"select count(*) from stv_slices")
-    split_files <- unlist(slices[1]*4)
-    message(sprintf("%s slices detected, will split into %s files", slices, split_files))
+    split_files <- choose_number_of_splits()
   }
 
   # this functon is only intended in the processs of control flow

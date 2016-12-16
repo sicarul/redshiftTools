@@ -50,11 +50,9 @@ rs_upsert_table = function(
 ) {
 
   if(missing(split_files)){
-    message("Getting number of slices from Redshift")
-    slices = DBI::dbGetQuery(dbcon,"select count(*) from stv_slices")
-    split_files = unlist(slices[1]*4)
-    message(sprintf("%s slices detected, will split into %s files", slices, split_files))
+    split_files <- choose_number_of_splits()
   }
+
   # this functon is only intended in the processs of control flow
   # the occurs immediately after. This function does pretty much
   # all the work. it's not a pure function!
