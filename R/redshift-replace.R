@@ -42,7 +42,7 @@ rs_replace_table <- function(
 ) {
 
   if(missing(split_files)){
-    split_files <- choose_number_of_splits()
+    split_files <- choose_number_of_splits(data, dbcon)
   }
 
   # this functon is only intended in the processs of control flow

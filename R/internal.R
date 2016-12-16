@@ -291,7 +291,7 @@ WHERE
 WITH
 WITHOUT"))
 
-choose_number_of_splits <- function(data) {
+choose_number_of_splits <- function(data, dbcon) {
     message("Getting number of slices from Redshift")
     slices <- queryDo(dbcon,"select count(*) from stv_slices")
     split_files <- unlist(slices[1]*4)
