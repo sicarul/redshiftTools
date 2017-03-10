@@ -19,4 +19,3 @@ Translate the types of a given data.frame to Redshift types
 \dontrun{redshiftTools:::identify_rs_types(mtcars)}
 
 }
-

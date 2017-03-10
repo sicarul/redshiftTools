@@ -299,7 +299,12 @@ choose_number_of_splits <- function(data, dbcon) {
     rows_per_split <- nrow(data) / (slices[1] * 4)
     if (rows_per_split < 1000) {
       split_files <- slices[1]
+      # no need for more splits than there are rows
+      if (split_files > nrow(data)) {
+        split_files <- 1
+      }
     }
+    # No need for more splits than files
     message(sprintf("%s slices detected, will split into %s files", slices, split_files))
   return(split_files)
 }

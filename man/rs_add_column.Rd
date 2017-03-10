@@ -16,4 +16,3 @@ rs_add_column(dbcon, table_name, column_name, redshift_type)
 \description{
 Add a typed column to a redshift database
 }
-

@@ -17,4 +17,3 @@ The column names that redshift actually ended up using
 \description{
 Create redshift table
 }
-
