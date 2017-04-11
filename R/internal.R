@@ -320,3 +320,28 @@ choose_number_of_splits <- function(data, dbcon) {
     message(sprintf("%s slices detected, will split into %s files", slices, split_files))
   return(split_files)
 }
+
+make_dot <- function(table, schema = NULL) {
+  assertthat::is.scalar(table)
+  if (is.null(schema)) {
+    schema <- "public"
+  }
+  assertthat::is.scalar(schema)
+  paste0(schema,".",table)
+}
+
+vec_to_dot <- function(x) {
+  if (length(x) == 1) {
+    schema <- "public"
+    table <- x
+  } else {
+    assertthat::assert_that(length(x) == 2)
+    schema <- x[1]
+    table <- x[2]
+  }
+  make_dot(table, schema)
+}
+
+dot_to_vec  <- function(x) {
+  strsplit(x, split = ".", fixed = TRUE)[[1]]
+}
