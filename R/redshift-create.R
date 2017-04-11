@@ -3,6 +3,8 @@
 #' @param table_name \code{character}
 #'
 #' @return The column names that redshift actually ended up using
+#' @importFrom DBI dbExecute
+#' @importFrom whisker whisker.render 
 #' @export
 rs_create_table <- function(.data, dbcon, table_name, ...) {
   data_types <- identify_rs_types(.data)
@@ -13,6 +15,6 @@ rs_create_table <- function(.data, dbcon, table_name, ...) {
 
   spec <- paste(paste(column_names, data_types), collapse=", ")
   sql_code <- whisker::whisker.render("CREATE TABLE IF NOT EXISTS {{table_name}} ({{spec}})")
-  DBI::dbGetQuery(dbcon, sql_code)
+  DBI::dbExecute(dbcon, sql_code)
   return(column_names)
 }
