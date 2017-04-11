@@ -101,10 +101,17 @@ queryDo <- function(dbcon, query){
 }
 
 get_table_schema <- function(dbcon, table) {
+  if (is.atomic(table)) {
+    schema <- 'public'
+    target_table <- table
+  } else {
+    schema <- table[1]
+    target_table <- table[2]
+  }
   dbGetQuery(dbcon, whisker.render("SELECT *
   FROM pg_table_def
   WHERE tablename = '{{table_name}}'
-  AND schemaname = 'public'", list(table_name = table)))
+  AND schemaname = '{{schema}}'", list(table_name = target_table, schema = schema)))
 }
 
 #' @importFrom whisker whisker.render
