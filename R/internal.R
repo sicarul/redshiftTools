@@ -100,7 +100,12 @@ queryDo <- function(dbcon, query){
   dbGetQuery(dbcon, query)
 }
 
+#' @importFrom assertthat assert_that
+#' @importFrom DBI dbGetQuery
+#' @importFrom whisker whisker.render
 get_table_schema <- function(dbcon, table) {
+  assertthat::assert_that(length(table) <= 2)
+  assertthat::assert_that("character" %in% class(table))
   if (is.atomic(table)) {
     schema <- 'public'
     target_table <- table
