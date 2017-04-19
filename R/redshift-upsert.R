@@ -48,7 +48,10 @@ rs_upsert_table = function(
   strict = FALSE,
   use_transaction = TRUE
 ) {
-
+  if(missing(bucket)) {
+    stop("Bucket name not specified")
+  }
+  
   if(missing(split_files)){
     split_files <- choose_number_of_splits(data, dbcon)
   }
