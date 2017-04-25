@@ -11,6 +11,7 @@
 #' @param region the region of the bucket. Will look for AWS_DEFAULT_REGION on environment if not specified.
 #' @param access_key the access key with permissions for the bucket. Will look for AWS_ACCESS_KEY_ID on environment if not specified.
 #' @param secret_key the secret key with permissions fot the bucket. Will look for AWS_SECRET_ACCESS_KEY on environment if not specified.
+#' @param iam_role_arn an iam role arn with permissions fot the bucket. Will look for AWS_IAM_ROLE_ARN on environment if not specified. This is ignoring access_key and secret_key if set.
 #' @examples
 #' library(DBI)
 #'
