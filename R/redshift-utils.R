@@ -23,3 +23,20 @@ recent_errors <- function(con, n = 10) {
     purrr::map(stringr::str_trim) %>%
     as.data.frame()
 }
+
+
+#' Show definition for a view
+#'
+#' @param con
+#' @param view_name
+#'
+#' @return character
+#' @export
+#'
+#' @examples
+#' @importFrom whisker whisker.render
+#' @importFrom DBI dbGetQuery
+view_definition <- function(con, view_name) {
+  dbGetQuery(con, whisker.render("select view_definition from information_schema.views where table_name = ‘{{view_name}}’", list(view_name = view_name)))
+}
+
