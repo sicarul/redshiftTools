@@ -11,6 +11,7 @@
 #' @param region the region of the bucket. Will look for AWS_DEFAULT_REGION on environment if not specified.
 #' @param access_key the access key with permissions for the bucket. Will look for AWS_ACCESS_KEY_ID on environment if not specified.
 #' @param secret_key the secret key with permissions fot the bucket. Will look for AWS_SECRET_ACCESS_KEY on environment if not specified.
+#' @param iam_role_arn an iam role arn with permissions fot the bucket. Will look for AWS_IAM_ROLE_ARN on environment if not specified. This is ignoring access_key and secret_key if set.
 #' @examples
 #' library(DBI)
 #'
@@ -34,13 +35,15 @@ rs_replace_table = function(
     bucket=Sys.getenv('AWS_BUCKET_NAME'),
     region=Sys.getenv('AWS_DEFAULT_REGION'),
     access_key=Sys.getenv('AWS_ACCESS_KEY_ID'),
-    secret_key=Sys.getenv('AWS_SECRET_ACCESS_KEY')
+    secret_key=Sys.getenv('AWS_SECRET_ACCESS_KEY'),
+    iam_role_arn=Sys.getenv('AWS_IAM_ROLE_ARN')
     )
   {
 
   Sys.setenv('AWS_DEFAULT_REGION'=region)
   Sys.setenv('AWS_ACCESS_KEY_ID'=access_key)
   Sys.setenv('AWS_SECRET_ACCESS_KEY'=secret_key)
+  Sys.setenv('AWS_IAM_ROLE_ARN'=iam_role_arn)
 
   if(missing(split_files)){
     print("Getting number of slices from Redshift")
@@ -59,15 +62,14 @@ rs_replace_table = function(
       queryDo(dbcon, sprintf("delete from %s", tableName))
 
       print("Copying data from S3 into Redshift")
-      queryDo(dbcon, sprintf("copy %s from 's3://%s/%s.' region '%s' csv gzip ignoreheader 1 emptyasnull COMPUPDATE FALSE credentials 'aws_access_key_id=%s;aws_secret_access_key=%s';",
-                          tableName,
-                          bucket,
-                          prefix,
-                          region,
-                          access_key,
-                          secret_key
-              ))
-
+      copyStr = "copy %s from 's3://%s/%s.' region '%s' csv gzip ignoreheader 1 emptyasnull COMPUPDATE FALSE"
+      if (nchar(iam_role_arn) > 0) {
+        copyStr = paste(copyStr, sprintf("iam_role '%s'", iam_role_arn), sep=" ")
+      } else {
+        copyStr = paste(copyStr, sprintf("credentials 'aws_access_key_id=%s;aws_secret_access_key=%s'", access_key, secret_key), sep=" ")
+      }
+      statement = sprintf(copyStr, stageTable, bucket, prefix, region)
+      queryDo(dbcon, statement)
       print("Committing changes")
       queryDo(dbcon, "COMMIT;")
       return(TRUE)
@@ -84,4 +86,3 @@ rs_replace_table = function(
 
   return (result)
 }
-
