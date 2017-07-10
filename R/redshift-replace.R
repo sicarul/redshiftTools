@@ -69,7 +69,7 @@ rs_replace_table = function(
       } else {
         copyStr = paste(copyStr, sprintf("credentials 'aws_access_key_id=%s;aws_secret_access_key=%s'", access_key, secret_key), sep=" ")
       }
-      statement = sprintf(copyStr, tableName, bucket, prefix, region)
+      statement = sprintf(copyStr, stageTable, bucket, prefix, region)
       queryDo(dbcon, statement)
 
 
