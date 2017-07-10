@@ -15,4 +15,4 @@ Imports:
 Description: Tools to upload data to an Amazon Redshift Database with good performance.
 License: MIT + file LICENSE
 LazyData: TRUE
-RoxygenNote: 5.0.1
+RoxygenNote: 6.0.1

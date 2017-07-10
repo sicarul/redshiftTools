@@ -8,7 +8,8 @@ rs_replace_table(data, dbcon, tableName, split_files,
   bucket = Sys.getenv("AWS_BUCKET_NAME"),
   region = Sys.getenv("AWS_DEFAULT_REGION"),
   access_key = Sys.getenv("AWS_ACCESS_KEY_ID"),
-  secret_key = Sys.getenv("AWS_SECRET_ACCESS_KEY"))
+  secret_key = Sys.getenv("AWS_SECRET_ACCESS_KEY"),
+  iam_role_arn = Sys.getenv("AWS_IAM_ROLE_ARN"))
 }
 \arguments{
 \item{data}{a data frame}
@@ -26,6 +27,8 @@ rs_replace_table(data, dbcon, tableName, split_files,
 \item{access_key}{the access key with permissions for the bucket. Will look for AWS_ACCESS_KEY_ID on environment if not specified.}
 
 \item{secret_key}{the secret key with permissions fot the bucket. Will look for AWS_SECRET_ACCESS_KEY on environment if not specified.}
+
+\item{iam_role_arn}{an iam role arn with permissions fot the bucket. Will look for AWS_IAM_ROLE_ARN on environment if not specified. This is ignoring access_key and secret_key if set.}
 }
 \description{
 Upload a table to S3 and then load it with redshift, replacing the contents of that table.
@@ -46,4 +49,3 @@ bucket="my-bucket", split_files=4)
 
 }
 }
-

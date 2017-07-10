@@ -58,8 +58,9 @@ rs_replace_table = function(
 
 
   result = tryCatch({
-      print("Deleting target table for replacement")
-      queryDo(dbcon, sprintf("delete from %s", tableName))
+      stageTable=paste0(sample(letters,16),collapse = "")
+
+      queryDo(dbcon, sprintf("create temp table %s (like %s)", stageTable, tableName))
 
       print("Copying data from S3 into Redshift")
       copyStr = "copy %s from 's3://%s/%s.' region '%s' csv gzip ignoreheader 1 emptyasnull COMPUPDATE FALSE"
@@ -70,8 +71,20 @@ rs_replace_table = function(
       }
       statement = sprintf(copyStr, tableName, bucket, prefix, region)
       queryDo(dbcon, statement)
+
+
+      print("Deleting target table for replacement")
+      queryDo(dbcon, sprintf("delete from %s", tableName))
+
+      print("Insert new rows")
+      queryDo(dbcon, sprintf('insert into %s select * from %s', tableName, stageTable))
+
+      print("Drop staging table")
+      queryDo(dbcon, sprintf("drop table %s", stageTable))
+
       print("Committing changes")
       queryDo(dbcon, "COMMIT;")
+
       return(TRUE)
   }, warning = function(w) {
       print(w)

@@ -89,9 +89,12 @@ rs_upsert_table = function(
     print("Insert new rows")
     queryDo(dbcon, sprintf('insert into %s select * from %s', tableName, stageTable))
 
+    print("Drop staging table")
     queryDo(dbcon, sprintf("drop table %s", stageTable))
+
     print("Commiting")
     queryDo(dbcon, "COMMIT;")
+
     return(TRUE)
   }, warning = function(w) {
       print(w)
