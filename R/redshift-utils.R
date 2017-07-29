@@ -27,8 +27,8 @@ recent_errors <- function(con, n = 10) {
 
 #' Show definition for a view
 #'
-#' @param con
-#' @param view_name
+#' @param con A database connection object
+#' @param view_name The view you'd like to describe
 #'
 #' @return character
 #' @export
