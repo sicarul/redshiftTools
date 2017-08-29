@@ -98,7 +98,7 @@ uploadToS3 <- function(data, bucket, split_files) {
 #' @importFrom "aws.s3" "delete_object"
 #' @importFrom parallel mclapply
 deletePrefix <- function(prefix, bucket, split_files) {
-  file_names <- paste(prefix, ".", formatC(i, width = 4, format = "d", flag = "0"), ".psv.gz", sep="")
+  file_names <- paste(prefix, ".", formatC(1:split_files, width = 4, format = "d", flag = "0"), ".psv.gz", sep="")
   s3_bucket <- boto$connect_s3()$get_bucket(bucket)
   s3_bucket$delete_keys(sapply(file_names, s3_bucket$get_key))
   NULL #error message otherwise is TypeError: 'MultiDeleteResult' object is not iterable
@@ -381,11 +381,11 @@ make_creds <- function(
   if (!missing(access_key) & !missing(secret_key)) {
     # Uses access_key and secret_key if provided
     return(gen_credentials(access_key, secret_key))
-  } else if (nchar(Sys.getenv('REDSHIFT_ROLE') > 0)) {
+  } else if (nchar(Sys.getenv('REDSHIFT_ROLE')) > 0) {
     # otherwise use REDSHIFT_ROLE env var if available,
     return(glue("IAM_ROLE '{Sys.getenv('REDSHIFT_ROLE')}'"))
-  } else if (nchar(Sys.getenv('AWS_ACCESS_KEY')) > 0 && nchar(Sys.getenv('AWS_SECRET_ACCESS_KEY'))) {
-    return(gen_credentials(Sys.getenv('AWS_ACCESS_KEY'), Sys.getenv('AWS_SECRET_ACCESS_KEY')))
+  } else if (nchar(Sys.getenv('AWS_ACCESS_KEY_ID')) > 0 && nchar(Sys.getenv('AWS_SECRET_ACCESS_KEY'))) {
+    return(gen_credentials(Sys.getenv('AWS_ACCESS_KEY_ID'), Sys.getenv('AWS_SECRET_ACCESS_KEY')))
   } else {
     stop("Unable to generate Redshift credentials; check for AWS_ACCESS_KEY and AWS_SECRET_ACCESS_KEY env vars or a REDSHIFT_ROLE env var")
   }
