@@ -43,15 +43,15 @@ rs_upsert_table = function(
   split_files,
   bucket=Sys.getenv('AWS_BUCKET_NAME'),
   region=Sys.getenv('AWS_DEFAULT_REGION'),
-  access_key=Sys.getenv('AWS_ACCESS_KEY_ID'),
-  secret_key=Sys.getenv('AWS_SECRET_ACCESS_KEY'),
+  access_key=NULL,
+  secret_key=NULL,
   strict = FALSE,
   use_transaction = TRUE
 ) {
   if(missing(bucket)) {
     stop("Bucket name not specified")
   }
-  
+
   if(missing(split_files)){
     split_files <- choose_number_of_splits(data, dbcon)
   }
@@ -73,13 +73,12 @@ rs_upsert_table = function(
     DBI::dbGetQuery(dbcon, sprintf("create temp table %s (like %s)", stageTable, tableName))
 
     message("Copying data from S3 into Redshift")
-    DBI::dbExecute(dbcon, sprintf("copy %s from 's3://%s/%s.' region '%s' truncatecolumns acceptinvchars as '^' escape delimiter '|' removequotes gzip ignoreheader 1 emptyasnull STATUPDATE ON COMPUPDATE ON credentials 'aws_access_key_id=%s;aws_secret_access_key=%s';",
+    DBI::dbExecute(dbcon, sprintf("copy %s from 's3://%s/%s.' region '%s' truncatecolumns acceptinvchars as '^' escape delimiter '|' removequotes gzip ignoreheader 1 emptyasnull STATUPDATE ON COMPUPDATE ON %s;",
                                    stageTable,
                                    bucket,
                                    prefix,
                                    region,
-                                   access_key,
-                                   secret_key
+                                   make_creds()
     ))
 
     if(!is.null(keys)) {

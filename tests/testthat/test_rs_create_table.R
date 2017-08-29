@@ -10,7 +10,7 @@ test_that(
       names(mtcars)
     )
 
-    suppressMessages(rs_upsert_table(mtcars, rs$con, "mtcars"))
+    suppressMessages(rs_upsert_table(mtcars, rs$con, "mtcars", bucket = "zapier-data-science-storage"))
 
     uploaded_mtcars <- DBI::dbGetQuery(rs$con, "select * from mtcars")
     expect_equal(

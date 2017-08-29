@@ -1,3 +1,6 @@
+#' @importFrom reticulate import
+boto <- reticulate::import("boto", delay_load = TRUE)
+
 #' Translate the types of a given data.frame to Redshift types
 #'
 #' @param .data data.frame, tbl_df
@@ -29,15 +32,21 @@ identify_rs_types <- function(.data) {
   return(data_types)
 }
 
+bucket_exists <- function(bucket) {
+  !is.null(boto$connect_s3()$lookup(bucket))
+}
+
 # Internal utility functions used by the redshift tools
 
-#' @importFrom aws.s3 put_object bucket_exists
+#' @importFrom aws.s3 put_object
+#' @importFrom aws.signature locate_credentials
 #' @importFrom utils write.csv
 #' @importFrom zapieR data_science_storage_s3 data_monolith_etl_s3 data_monolith_staging_s3
 uploadToS3 <- function(data, bucket, split_files) {
 
   prefix = paste0(sample(letters, 32, replace = TRUE), collapse = "")
 
+  # this use of locate_credentials works on a IAM Role provisioned box, it is unclear how it would work in other environments
   if(!bucket_exists(bucket)) {
     stop("Bucket does not exist")
   }
@@ -88,11 +97,11 @@ uploadToS3 <- function(data, bucket, split_files) {
 
 #' @importFrom "aws.s3" "delete_object"
 #' @importFrom parallel mclapply
-deletePrefix <- function(prefix, bucket, split_files){
-  parallel::mclapply(1:split_files, function(i) {
-    s3Name = paste(prefix, ".", formatC(i, width = 4, format = "d", flag = "0"), ".psv.gz", sep="")
-    delete_object(s3Name, bucket)
-  })
+deletePrefix <- function(prefix, bucket, split_files) {
+  file_names <- paste(prefix, ".", formatC(i, width = 4, format = "d", flag = "0"), ".psv.gz", sep="")
+  s3_bucket <- boto$connect_s3()$get_bucket(bucket)
+  s3_bucket$delete_keys(sapply(file_names, s3_bucket$get_key))
+  NULL #error message otherwise is TypeError: 'MultiDeleteResult' object is not iterable
 }
 
 #' @importFrom DBI dbGetQuery
@@ -344,4 +353,40 @@ vec_to_dot <- function(x) {
 
 dot_to_vec  <- function(x) {
   strsplit(x, split = ".", fixed = TRUE)[[1]]
+}
+
+
+#' Make Credentials
+#'
+#' Uses access_key and secret_key if provided,
+#' otherwise use REDSHIFT_ROLE env var if available,
+#' otherwise use AWS_ACCESS_KEY and AWS_SECRET_ACCESS_KEY env var,
+#' otherwise error.
+#'
+#' REDSHIFT_ROLE should be the full resource address, e.g. arn:aws:iam::###:role/{name}
+#'
+#' @param access_key character (optional)
+#' @param secret_key character (optional)
+#' @return character string to append to provide creds to Redshift
+#'
+#' @importFrom glue glue
+make_creds <- function(
+  access_key = NULL,
+  secret_key = NULL
+) {
+  gen_credentials <- function(access_key, secret_key) {
+    return(glue("credentials 'aws_access_key_id={access_key};aws_secret_access_key={secret_key}'"))
+  }
+
+  if (!missing(access_key) & !missing(secret_key)) {
+    # Uses access_key and secret_key if provided
+    return(gen_credentials(access_key, secret_key))
+  } else if (nchar(Sys.getenv('REDSHIFT_ROLE') > 0)) {
+    # otherwise use REDSHIFT_ROLE env var if available,
+    return(glue("IAM_ROLE '{Sys.getenv('REDSHIFT_ROLE')}'"))
+  } else if (nchar(Sys.getenv('AWS_ACCESS_KEY')) > 0 && nchar(Sys.getenv('AWS_SECRET_ACCESS_KEY'))) {
+    return(gen_credentials(Sys.getenv('AWS_ACCESS_KEY'), Sys.getenv('AWS_SECRET_ACCESS_KEY')))
+  } else {
+    stop("Unable to generate Redshift credentials; check for AWS_ACCESS_KEY and AWS_SECRET_ACCESS_KEY env vars or a REDSHIFT_ROLE env var")
+  }
 }

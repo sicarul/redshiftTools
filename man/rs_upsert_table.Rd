@@ -6,10 +6,8 @@
 \usage{
 rs_upsert_table(data, dbcon, tableName, keys = NULL, split_files,
   bucket = Sys.getenv("AWS_BUCKET_NAME"),
-  region = Sys.getenv("AWS_DEFAULT_REGION"),
-  access_key = Sys.getenv("AWS_ACCESS_KEY_ID"),
-  secret_key = Sys.getenv("AWS_SECRET_ACCESS_KEY"), strict = FALSE,
-  use_transaction = TRUE)
+  region = Sys.getenv("AWS_DEFAULT_REGION"), access_key = NULL,
+  secret_key = NULL, strict = FALSE, use_transaction = TRUE)
 }
 \arguments{
 \item{data}{a data frame}
