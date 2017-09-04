@@ -34,6 +34,7 @@ identify_rs_types <- function(.data) {
 #' @importFrom aws.s3 put_object bucket_exists
 #' @importFrom utils write.csv
 #' @importFrom zapieR data_science_storage_s3 data_monolith_etl_s3 data_monolith_staging_s3
+#' uploadToS3 handles the -test thing on its own since it uses the zapieR methods
 uploadToS3 <- function(data, bucket, split_files) {
 
   prefix = paste0(sample(letters, 32, replace = TRUE), collapse = "")
