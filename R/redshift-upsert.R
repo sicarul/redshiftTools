@@ -51,7 +51,7 @@ rs_upsert_table = function(
   if(missing(bucket)) {
     stop("Bucket name not specified")
   }
-  
+
   if(missing(split_files)){
     split_files <- choose_number_of_splits(data, dbcon)
   }
@@ -60,22 +60,24 @@ rs_upsert_table = function(
   # the occurs immediately after. This function does pretty much
   # all the work. it's not a pure function!
   upsert <- function(data, dbcon, keys) {
+    raw_bucket <- paste0(bucket, if (Sys.getenv('ENVIRONMENT') == 'prod') "" else "-test")
     split_files <- min(split_files, nrow(data))
 
     data <- fix_column_order(data, dbcon, table_name = tableName, strict = strict)
     prefix <- uploadToS3(data, bucket, split_files)
     on.exit({
       message("Deleting temporary files from S3 bucket")
-      deletePrefix(prefix, bucket, split_files)
+      deletePrefix(prefix, raw_bucket, split_files)
     })
     stageTable <- paste0(sample(letters, 32, replace=TRUE), collapse = "")
 
     DBI::dbGetQuery(dbcon, sprintf("create temp table %s (like %s)", stageTable, tableName))
 
     message("Copying data from S3 into Redshift")
+
     DBI::dbExecute(dbcon, sprintf("copy %s from 's3://%s/%s.' region '%s' truncatecolumns acceptinvchars as '^' escape delimiter '|' removequotes gzip ignoreheader 1 emptyasnull STATUPDATE ON COMPUPDATE ON credentials 'aws_access_key_id=%s;aws_secret_access_key=%s';",
                                    stageTable,
-                                   bucket,
+                                   raw_bucket,
                                    prefix,
                                    region,
                                    access_key,
