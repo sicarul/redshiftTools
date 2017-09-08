@@ -53,7 +53,7 @@ rs_replace_table <- function(
     split_files <- min(split_files, nrow(data))
     data <- fix_column_order(data, dbcon, table_name = tableName, strict = strict)
     prefix <- uploadToS3(data, bucket, split_files)
-    raw_bucket <- paste0(bucket, if (Sys.getenv('ENVIRONMENT') == 'prod') "" else "-test")
+    raw_bucket <- paste0(bucket, if (Sys.getenv('ENVIRONMENT') == 'production') "" else "-test")
     on.exit({
       message("Deleting temporary files from S3 bucket")
       deletePrefix(prefix, raw_bucket, split_files)
