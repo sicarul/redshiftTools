@@ -60,13 +60,14 @@ rs_upsert_table = function(
   # the occurs immediately after. This function does pretty much
   # all the work. it's not a pure function!
   upsert <- function(data, dbcon, keys) {
+    raw_bucket <- paste0(bucket, if (Sys.getenv('ENVIRONMENT') == 'production') "" else "-test")
     split_files <- min(split_files, nrow(data))
 
     data <- fix_column_order(data, dbcon, table_name = tableName, strict = strict)
     prefix <- uploadToS3(data, bucket, split_files)
     on.exit({
       message("Deleting temporary files from S3 bucket")
-      deletePrefix(prefix, bucket, split_files)
+      deletePrefix(prefix, raw_bucket, split_files)
     })
     stageTable <- paste0(sample(letters, 32, replace=TRUE), collapse = "")
 
@@ -75,7 +76,7 @@ rs_upsert_table = function(
     message("Copying data from S3 into Redshift")
     DBI::dbExecute(dbcon, sprintf("copy %s from 's3://%s/%s.' region '%s' truncatecolumns acceptinvchars as '^' escape delimiter '|' removequotes gzip ignoreheader 1 emptyasnull STATUPDATE ON COMPUPDATE ON %s;",
                                    stageTable,
-                                   bucket,
+                                   raw_bucket,
                                    prefix,
                                    region,
                                    make_creds()

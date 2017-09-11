@@ -54,9 +54,10 @@ rs_replace_table <- function(
     split_files <- min(split_files, nrow(data))
     data <- fix_column_order(data, dbcon, table_name = tableName, strict = strict)
     prefix <- uploadToS3(data, bucket, split_files)
+    raw_bucket <- paste0(bucket, if (Sys.getenv('ENVIRONMENT') == 'production') "" else "-test")
     on.exit({
       message("Deleting temporary files from S3 bucket")
-      deletePrefix(prefix, bucket, split_files)
+      deletePrefix(prefix, raw_bucket, split_files)
     })
     message("Truncating target table")
     queryDo(dbcon, sprintf("truncate table %s", tableName))
@@ -67,7 +68,7 @@ rs_replace_table <- function(
     }
     DBI::dbExecute(dbcon, sprintf(query_string,
                            tableName,
-                           bucket,
+                           raw_bucket,
                            prefix,
                            region,
                            make_creds()
