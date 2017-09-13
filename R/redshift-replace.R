@@ -34,8 +34,9 @@ rs_replace_table <- function(
   split_files,
   bucket = Sys.getenv('AWS_BUCKET_NAME'),
   region = Sys.getenv('AWS_DEFAULT_REGION'),
-  access_key = Sys.getenv('AWS_ACCESS_KEY_ID'),
-  secret_key = Sys.getenv('AWS_SECRET_ACCESS_KEY'),
+  # the internal make_creds() handles the defaults for these params
+  access_key = NULL,
+  secret_key = NULL,
   remove_quotes = TRUE,
   strict = TRUE,
   use_transaction = TRUE
@@ -61,17 +62,16 @@ rs_replace_table <- function(
     message("Truncating target table")
     queryDo(dbcon, sprintf("truncate table %s", tableName))
     if(remove_quotes) {
-      query_string <- "copy %s from 's3://%s/%s.' region '%s' truncatecolumns acceptinvchars as '^' escape delimiter '|' removequotes gzip ignoreheader 1 emptyasnull STATUPDATE ON COMPUPDATE ON credentials 'aws_access_key_id=%s;aws_secret_access_key=%s';"
+      query_string <- "copy %s from 's3://%s/%s.' region '%s' truncatecolumns acceptinvchars as '^' escape delimiter '|' removequotes gzip ignoreheader 1 emptyasnull STATUPDATE ON COMPUPDATE ON %s;"
     } else {
-      query_string <- "copy %s from 's3://%s/%s.' region '%s' truncatecolumns acceptinvchars as '^' escape delimiter '|' gzip ignoreheader 1 emptyasnull STATUPDATE ON COMPUPDATE ON credentials 'aws_access_key_id=%s;aws_secret_access_key=%s';"
+      query_string <- "copy %s from 's3://%s/%s.' region '%s' truncatecolumns acceptinvchars as '^' escape delimiter '|' gzip ignoreheader 1 emptyasnull STATUPDATE ON COMPUPDATE ON %s;"
     }
     DBI::dbExecute(dbcon, sprintf(query_string,
                            tableName,
                            raw_bucket,
                            prefix,
                            region,
-                           access_key,
-                           secret_key
+                           make_creds()
     ))
   }
 
