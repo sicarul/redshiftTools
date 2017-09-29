@@ -1,9 +1,9 @@
 Package: redshiftTools
 Type: Package
 Title: Redshift Tools
-Version: 0.1.1
-Authors@R: person("Pablo", "Seibelt", email = "pabloseibelt@sicarul.com",
-  role = c("aut", "cre"))
+Version: 0.1.2
+Authors@R: c(person("Pablo", "Seibelt", email = "pabloseibelt@sicarul.com",
+  role = c("aut", "cre")),person("Russell S.", "Pierce", role = c("ctb"), email = "russell.pierce@zapier.com"))
 Mantainers@R: person("Pablo", "Seibelt", email = "pabloseibelt@sicarul.com",
     role = c("aut", "cre"))
 Depends:
