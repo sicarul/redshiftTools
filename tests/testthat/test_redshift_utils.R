@@ -1,3 +1,4 @@
+Sys.setenv(REDSHIFT_ROLE = 'arn:aws:iam::996097627176:role/production-redshift')
 context("redshift-utils.R")
 
 test_that("correctly infer numeric type", {

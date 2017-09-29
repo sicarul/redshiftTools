@@ -1,6 +1,7 @@
 warnifnoschema <- function(table_name) {
   if (!"ident" %in% class(table_name)) {
-    warning("No schema specified for {table_name} using public")
+    # The code isn't ready to handle schemaed tables
+    # warning("No schema specified for {table_name} using public")
     return(FALSE)
   } else {
     return(TRUE)

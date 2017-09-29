@@ -1,3 +1,4 @@
+Sys.setenv(REDSHIFT_ROLE = 'arn:aws:iam::996097627176:role/production-redshift')
 context("Test that we can make a connection to Redshift")
 
 zapieR::make_db_connections()

@@ -1,3 +1,4 @@
+Sys.setenv(REDSHIFT_ROLE = 'arn:aws:iam::996097627176:role/production-redshift')
 context("Spectrum Tools")
 
 test_that("Don't allow a partionless schema with type date", {
