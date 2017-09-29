@@ -1,36 +1,24 @@
+warnifnoschema <- function(table_name) {
+  if (!"ident" %in% class(table_name)) {
+    warning("No schema specified for {table_name} using public")
+    return(FALSE)
+  } else {
+    return(TRUE)
+  }
+}
+
+#' Simple coalece
+#'
+#' A simple non-type aware coalece
+#'
+#' @export coalesceifnull %||%
+#' @aliases coalesceifnull %||%
+coalesceifnull <- function(x,y) {return(x %||% y)}
+`%||%` <- function(x, y) if (is.null(x) || length(x) == 0) y else x
+
+
 #' @importFrom reticulate import
 boto <- reticulate::import("boto", delay_load = TRUE)
-
-#' Translate the types of a given data.frame to Redshift types
-#'
-#' @param .data data.frame, tbl_df
-#'
-#' @return character
-#' @importFrom dplyr recode
-#'
-#' @examples
-#' \dontrun{redshiftTools:::identify_rs_types(mtcars)}
-#'
-identify_rs_types <- function(.data) {
-  classes <- lapply(.data, class)
-  classes_first_pass <- lapply(classes, function(x) {
-    if (all(c("POSIXct", "POSIXt") %in% x)) {
-      x <- "TIMESTAMP"
-    }
-    return(x)
-  })
-  if (any("factor" %in% classes_first_pass)) {
-    warning("one of the columns is a factor")
-  }
-  data_types <- recode(
-    unlist(classes_first_pass),
-    factor = "VARCHAR(255)",
-    numeric = "FLOAT8",
-    integer = "BIGINT",
-    character = "VARCHAR(255)",
-    logical = "BOOLEAN")
-  return(data_types)
-}
 
 bucket_exists <- function(bucket) {
   !is.null(boto$connect_s3()$lookup(bucket))
@@ -136,7 +124,7 @@ get_table_schema <- function(dbcon, table) {
 #' @importFrom dplyr select_
 #' @importFrom magrittr %>%
 fix_column_order <- function(d, dbcon, table_name, strict = TRUE) {
-  if (!DBI::dbExistsTable(dbcon, table_name)) {
+  if (!"tbl_sql" %in% class(try(dbcon %>% dplyr::tbl(table_name)))) {
     stop(table_name, " does not exist")
   }
   column_names <- get_table_schema(dbcon, table_name)$column
@@ -163,157 +151,6 @@ fix_column_order <- function(d, dbcon, table_name, strict = TRUE) {
   }
   d %>% select_(.dots = paste0("`", column_names, "`"))
 }
-
-RESERVED_WORDS <- readLines(textConnection("AES128
-AES256
-ALL
-ALLOWOVERWRITE
-ANALYSE
-ANALYZE
-AND
-ANY
-ARRAY
-AS
-ASC
-AUTHORIZATION
-BACKUP
-BETWEEN
-BINARY
-BLANKSASNULL
-BOTH
-BYTEDICT
-BZIP2
-CASE
-CAST
-CHECK
-COLLATE
-COLUMN
-CONSTRAINT
-CREATE
-CREDENTIALS
-CROSS
-CURRENT_DATE
-CURRENT_TIME
-CURRENT_TIMESTAMP
-CURRENT_USER
-CURRENT_USER_ID
-DEFAULT
-DEFERRABLE
-DEFLATE
-DEFRAG
-DELTA
-DELTA32K
-DESC
-DISABLE
-DISTINCT
-DO
-ELSE
-EMPTYASNULL
-ENABLE
-ENCODE
-ENCRYPT
-ENCRYPTION
-END
-EXCEPT
-EXPLICIT
-FALSE
-FOR
-FOREIGN
-FREEZE
-FROM
-FULL
-GLOBALDICT256
-GLOBALDICT64K
-GRANT
-GROUP
-GZIP
-HAVING
-IDENTITY
-IGNORE
-ILIKE
-IN
-INITIALLY
-INNER
-INTERSECT
-INTO
-IS
-ISNULL
-JOIN
-LEADING
-LEFT
-LIKE
-LIMIT
-LOCALTIME
-LOCALTIMESTAMP
-LUN
-LUNS
-LZO
-LZOP
-MINUS
-MOSTLY13
-MOSTLY32
-MOSTLY8
-NATURAL
-NEW
-NOT
-NOTNULL
-NULL
-NULLS
-OFF
-OFFLINE
-OFFSET
-OID
-OLD
-ON
-ONLY
-OPEN
-OR
-ORDER
-OUTER
-OVERLAPS
-PARALLEL
-PARTITION
-PERCENT
-PERMISSIONS
-PLACING
-PRIMARY
-RAW
-READRATIO
-RECOVER
-REFERENCES
-RESPECT
-REJECTLOG
-RESORT
-RESTORE
-RIGHT
-SELECT
-SESSION_USER
-SIMILAR
-SOME
-SYSDATE
-SYSTEM
-TABLE
-TAG
-TDES
-TEXT255
-TEXT32K
-THEN
-TIMESTAMP
-TO
-TOP
-TRAILING
-TRUE
-TRUNCATECOLUMNS
-UNION
-UNIQUE
-USER
-USING
-VERBOSE
-WALLET
-WHEN
-WHERE
-WITH
-WITHOUT"))
 
 choose_number_of_splits <- function(data, dbcon) {
     message("Getting number of slices from Redshift")

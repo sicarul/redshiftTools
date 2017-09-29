@@ -51,10 +51,12 @@ rs_upsert_table = function(
   if(missing(bucket)) {
     stop("Bucket name not specified")
   }
-
+  warnifnoschema(tableName)
   if(missing(split_files)){
     split_files <- choose_number_of_splits(data, dbcon)
   }
+  # we make the creds as a test before we enter transaction land.
+  make_creds(access_key, secret_key)
 
   # this functon is only intended in the processs of control flow
   # the occurs immediately after. This function does pretty much

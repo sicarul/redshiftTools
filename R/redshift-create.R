@@ -7,6 +7,7 @@
 #' @importFrom whisker whisker.render
 #' @export
 rs_create_table <- function(.data, dbcon, table_name, ...) {
+  warnifnoschema(table_name)
   data_types <- identify_rs_types(.data)
   # Check table name
   if (grepl("-", table_name, fixed = TRUE)) {
@@ -14,7 +15,7 @@ rs_create_table <- function(.data, dbcon, table_name, ...) {
   }
   # Identify and mutate column names
   column_names <- names(.data)
-  column_name_is_reserved <- column_names %in% tolower(RESERVED_WORDS)
+  column_name_is_reserved <- column_names %in% tolower(REDSHIFT_RESERVED_WORDS)
   column_names[column_name_is_reserved] <- paste0('rw_', column_names[column_name_is_reserved])
 
   spec <- paste(paste(column_names, data_types), collapse=", ")

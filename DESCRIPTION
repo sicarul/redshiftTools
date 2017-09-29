@@ -19,9 +19,12 @@ Imports:
     magrittr,
     purrr,
     stringr,
-    whisker
+    whisker,
+    zapieR
 Description: Tools to upload data to an Amazon Redshift Database with good performance.
 License: MIT + file LICENSE
 LazyData: TRUE
 RoxygenNote: 6.0.1
-Suggests: testthat
+Suggests: testthat,
+    lubridate,
+    dbplyr
