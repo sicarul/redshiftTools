@@ -24,6 +24,7 @@ spectrum_add_partition <- function(dbcon, table_name, part_name, part_value, bas
 
 #' Define the DDL for an External Table
 #'
+#' @param con a database connection
 #' @param d data.frame
 #' @param table_name Result from dbplyr::in_schema specifying the table and the schema
 #' @param location s3:// style url
@@ -33,7 +34,7 @@ spectrum_add_partition <- function(dbcon, table_name, part_name, part_value, bas
 #' @export
 #' @importFrom dbplyr in_schema
 
-define_external_table_spec <- function(d, table_name, location, partitioned_by = "") {
+create_external_table <- function(con, d, table_name, location, partitioned_by = "") {
   # Check table name
   if (grepl("-", table_name, fixed = TRUE)) {
     stop("Hyphen in table name not allowed")
@@ -62,5 +63,5 @@ define_external_table_spec <- function(d, table_name, location, partitioned_by =
 
   assertthat::assert_that("ident" %in% class(table_name), msg = "table_name must be result of dbplyr::in_schema()")
   column_specification <- paste0(paste0(redshift_colnames, " ", redshift_types), collapse = ",")
-  glue("CREATE EXTERNAL TABLE {table_name} ({column_specification}) {partitioned_by_spec} STORED AS parquet LOCATION '{location}'")
+  dbExecute(con, glue("CREATE EXTERNAL TABLE {table_name} ({column_specification}) {partitioned_by_spec} STORED AS parquet LOCATION '{location}'"))
 }
