@@ -7,8 +7,7 @@ Authors@R: c(person("Pablo", "Seibelt", email = "pabloseibelt@sicarul.com",
 Mantainers@R: person("Pablo", "Seibelt", email = "pabloseibelt@sicarul.com",
     role = c("aut", "cre"))
 Depends:
-    R (>= 3.1.2),
-    zapieR
+    R (>= 3.1.2)
 Imports:
     DBI,
     RPostgres,
@@ -24,7 +23,7 @@ Imports:
 Description: Tools to upload data to an Amazon Redshift Database with good performance.
 License: MIT + file LICENSE
 LazyData: TRUE
-RoxygenNote: 6.0.1
+RoxygenNote: 6.0.1.9000
 Suggests: testthat,
     lubridate,
     dbplyr
