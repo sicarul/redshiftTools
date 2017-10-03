@@ -131,8 +131,8 @@ fix_column_order <- function(d, dbcon, table_name, strict = TRUE) {
   column_names <- get_table_schema(dbcon, table_name)$column
   # we want to ignore the rw_ prefix we add, because we add that dynamically at time of
   column_names <- gsub("rw_", "", column_names, fixed = TRUE)
-  #redshift doesn't respect case
-  names(d) <- tolower(names(d))
+  #redshift doesn't respect case, but needs some hand holding
+  names(d) <- sanitize_column_names_for_redshift(tolower(names(d)))
   if (!strict) {
     # add columns to redshift db
     for (missing_column in names(d)[!(names(d) %in% column_names)]) {

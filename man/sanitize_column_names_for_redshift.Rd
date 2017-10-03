@@ -7,7 +7,7 @@
 sanitize_column_names_for_redshift(.data)
 }
 \arguments{
-\item{.data}{data.frame}
+\item{.data}{data.frame or character vector}
 }
 \value{
 character vector

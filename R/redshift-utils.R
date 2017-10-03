@@ -151,14 +151,31 @@ WITHOUT"))
 
 #' Make Column Names that Redshift Can Be Happy With
 #'
-#' @param .data data.frame
+#' @param .data data.frame or character vector
 #'
 #' @return character vector
 #' @export
+#' @importFrom glue glue
+#' @importFrom assertthat assert_that
 sanitize_column_names_for_redshift <- function(.data) {
-  column_names <- names(.data)
-  column_name_is_reserved <- column_names %in% tolower(REDSHIFT_RESERVED_WORDS)
+  if (is.character(.data) & is.vector(.data)) {
+    column_names_original <- .data
+  } else {
+    assert_that("data.frame" %in% class(.data), msg = ".data in sanitize_column_names_for_redshift should be data.frame or a character vector")
+    column_names_original <- names(.data)
+  }
+
+  column_names <- column_names_original
+  column_name_is_reserved <- tolower(column_names) %in% tolower(REDSHIFT_RESERVED_WORDS)
   column_names[column_name_is_reserved] <- paste0('rw_', column_names[column_name_is_reserved])
+  if (length(column_name_is_reserved) > 0) {
+    message(glue("replacing column name '{column_names_original[column_name_is_reserved]}' with '{column_names[column_name_is_reserved]}' because the original is a reserved name in Redshift.  "))
+  }
+  column_name_contains_period <- grepl(".", column_names, fixed=TRUE)
+  column_names <- gsub(".", "_", column_names, fixed = TRUE)
+  if (length(column_name_is_reserved) > 0) {
+    message(glue("replacing column name '{column_names_original[column_name_contains_period]}' with '{column_names[column_name_contains_period]}' because periods perform poorly as column names in Redshift.  "))
+  }
   return(column_names)
 }
 
