@@ -14,9 +14,7 @@ rs_create_table <- function(.data, dbcon, table_name, ...) {
     stop("Hyphen in table name not allowed")
   }
   # Identify and mutate column names
-  column_names <- names(.data)
-  column_name_is_reserved <- column_names %in% tolower(REDSHIFT_RESERVED_WORDS)
-  column_names[column_name_is_reserved] <- paste0('rw_', column_names[column_name_is_reserved])
+  column_names <- sanitize_column_names_for_redshift(names(.data))
 
   spec <- paste(paste(column_names, data_types), collapse=", ")
   sql_code <- whisker::whisker.render("CREATE TABLE IF NOT EXISTS {{table_name}} ({{spec}})")
