@@ -274,6 +274,7 @@ view_definition <- function(dbcon, view_name) {
 #' @return boolean
 #' @export
 #' @importFrom zapieR whisker.render.recursive
+#' @importFrom dplyr pull
 rs_table_exists <- function(dbcon, table_name) {
   stopifnoschema(table_name)
   # Many don't respect in_schema, but elsewhere in our code we'd like to pass it around.  So, hack around the problem.
