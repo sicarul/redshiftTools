@@ -251,7 +251,7 @@ recent_errors <- function(con, n = 10) {
 
 #' Show definition for a view
 #'
-#' @param con A database connection object
+#' @param dbcon A database connection object
 #' @param view_name The view you'd like to describe
 #'
 #' @return character
@@ -260,7 +260,7 @@ recent_errors <- function(con, n = 10) {
 #' @examples
 #' @importFrom whisker whisker.render
 #' @importFrom DBI dbGetQuery
-view_definition <- function(con, view_name) {
-  dbGetQuery(con, whisker.render("select view_definition from information_schema.views where table_name = '{{view_name}}'", list(view_name = view_name)))
+view_definition <- function(dbcon, view_name) {
+  dbGetQuery(dbcon, whisker.render("select view_definition from information_schema.views where table_name = '{{view_name}}'", list(view_name = view_name)))
 }
 
