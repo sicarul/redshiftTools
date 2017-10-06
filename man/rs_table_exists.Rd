@@ -15,5 +15,5 @@ rs_table_exists(dbcon, table_name)
 boolean
 }
 \description{
-Check if table exists
+Passing this check does not mean that the user has access to the table per se.
 }
