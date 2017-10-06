@@ -1,7 +1,9 @@
+stopifnoschema <- function(table_name) {
+  assertthat::assert_that("ident" %in% class(table_name), msg = "Table name must be result of dbplyr::in_schema()")
+}
 warnifnoschema <- function(table_name) {
   if (!"ident" %in% class(table_name)) {
-    # The code isn't ready to handle schemaed tables
-    # warning("No schema specified for {table_name} using public")
+    warning("No schema specified for {table_name}, will default to using public")
     return(FALSE)
   } else {
     return(TRUE)
