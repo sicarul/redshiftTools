@@ -264,3 +264,21 @@ view_definition <- function(dbcon, view_name) {
   dbGetQuery(dbcon, whisker.render("select view_definition from information_schema.views where table_name = '{{view_name}}'", list(view_name = view_name)))
 }
 
+#' Check if table exists
+#'
+#' @param dbcon database connection
+#' @param table_name dbplyr::in_schema result
+#'
+#' @return boolean
+rs_table_exists <- function(dbcon, table_name) {
+  stopifnoschema(table_name)
+  # DBI doesn't respect in_schema, but elsewhere in our code we'd like to pass it around.  So, hack around the problem.
+  split_res <- strsplit(table_name, ".", fixed = TRUE)[[1]]
+  DBI::dbExistsTable(
+    dbcon,
+    c(
+      split_res[1],
+      split_res[2]
+    )
+  )
+}
