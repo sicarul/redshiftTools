@@ -272,6 +272,7 @@ view_definition <- function(dbcon, view_name) {
 #' @param table_name dbplyr::in_schema result
 #'
 #' @return boolean
+#' @export
 #' @importFrom zapieR whisker.render.recursive
 rs_table_exists <- function(dbcon, table_name) {
   stopifnoschema(table_name)
