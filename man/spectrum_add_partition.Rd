@@ -7,6 +7,8 @@
 spectrum_add_partition(dbcon, table_name, part_name, part_value, base_location)
 }
 \arguments{
+\item{dbcon}{The database connection to Redshift}
+
 \item{table_name}{A dblyr::in_schema defined table name}
 
 \item{part_name}{The name of the partition}

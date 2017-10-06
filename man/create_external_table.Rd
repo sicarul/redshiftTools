@@ -4,10 +4,10 @@
 \alias{create_external_table}
 \title{Define the DDL for an External Table}
 \usage{
-create_external_table(con, d, table_name, location, partitioned_by = "")
+create_external_table(dbcon, d, table_name, location, partitioned_by = "")
 }
 \arguments{
-\item{con}{a database connection}
+\item{dbcon}{a database connection}
 
 \item{d}{data.frame}
 
