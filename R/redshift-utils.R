@@ -266,19 +266,38 @@ view_definition <- function(dbcon, view_name) {
 
 #' Check if table exists
 #'
+#' Passing this check does not mean that the user has access to the table per se.
+#'
 #' @param dbcon database connection
 #' @param table_name dbplyr::in_schema result
 #'
 #' @return boolean
+#' @importFrom zapieR whisker.render.recursive
 rs_table_exists <- function(dbcon, table_name) {
   stopifnoschema(table_name)
-  # DBI doesn't respect in_schema, but elsewhere in our code we'd like to pass it around.  So, hack around the problem.
+  # Many don't respect in_schema, but elsewhere in our code we'd like to pass it around.  So, hack around the problem.
   split_res <- strsplit(table_name, ".", fixed = TRUE)[[1]]
-  DBI::dbExistsTable(
+  schemaname <- split_res[1]
+  tablename <- split_res[2]
+  # Two places to look, first check if this schema is external
+  select_exists <- "SELECT EXISTS ( {{query}} ) as present"
+  check_external_schema_exists <- "select 1 from SVV_EXTERNAL_SCHEMAS where schemaname = '{{schemaname}}'"
+  check_external_schema <- "SELECT 1 from SVV_EXTERNAL_TABLES where schemaname = '{{schemaname}}' and tablename = '{{tablename}}'"
+  check_internal_schema <- "SELECT 1 from SVV_TABLES where table_schema = '{{schemaname}}' and table_name = '{{tablename}}'"
+
+  schema_is_external <- dbGetQuery(
     dbcon,
-    c(
-      split_res[1],
-      split_res[2]
-    )
+    whisker.render.recursive(select_exists, list(query = check_external_schema_exists, schemaname = schemaname))
+  )  %>%
+    pull(present)
+
+  check_method <- ifelse(schema_is_external, check_external_schema, check_internal_schema)
+
+  return(
+    dbGetQuery(
+      dbcon,
+      whisker.render.recursive(select_exists, list(query = check_method, schemaname = schemaname, tablename = tablename))
+    )  %>%
+      pull(present)
   )
 }

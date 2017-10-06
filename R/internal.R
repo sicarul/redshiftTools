@@ -32,7 +32,6 @@ bucket_exists <- function(bucket) {
 #' uploadToS3 handles the -test thing on its own since it uses the zapieR methods
 #'
 #' @importFrom aws.s3 put_object
-#' @importFrom aws.signature locate_credentials
 #' @importFrom utils write.csv
 #' @importFrom zapieR data_science_storage_s3 data_monolith_etl_s3 data_monolith_staging_s3
 

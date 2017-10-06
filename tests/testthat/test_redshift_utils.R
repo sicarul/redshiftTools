@@ -11,16 +11,16 @@ test_that("correctly handle factor type", {
 
 test_that("correctly handle character type", {
   dat <- iris
-  dat$Species <- unfactor(dat$Species)
+  dat$Species <- zapieR::unfactor(dat$Species)
   expect_type(dat$Species, "character")
   expect_true(suppressWarnings(all(identify_rs_types(dat) == c("FLOAT8", "FLOAT8", "FLOAT8", "FLOAT8", "VARCHAR(11)"))))
 })
 
 test_that("correctly handle time types", {
   dat <- data.frame(
-    date = as.Date(now()),
+    date = as.Date(lubridate::now()),
     posixCT = zapieR::makePOSIXct(lubridate::now()),
-    posixLT = as.POSIXlt(makePOSIXct(lubridate::now()))
+    posixLT = as.POSIXlt(zapieR::makePOSIXct(lubridate::now()))
   )
   expect_true(suppressWarnings(all(identify_rs_types(dat) == c("DATE", "TIMESTAMP", "TIMESTAMP"))))
 })
