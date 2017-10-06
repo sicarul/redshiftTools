@@ -62,7 +62,7 @@ create_external_table <- function(dbcon, d, table_name, location, partitioned_by
     redshift_types <- redshift_types[-partitioned_by_index]
   }
 
-  assertthat::assert_that("ident" %in% class(table_name), msg = "table_name must be result of dbplyr::in_schema()")
+  warnifnoschema(tampe_name)
   column_specification <- paste0(paste0(redshift_colnames, " ", redshift_types), collapse = ",")
   dbExecute(dbcon, glue("CREATE EXTERNAL TABLE {table_name} ({column_specification}) {partitioned_by_spec} STORED AS parquet LOCATION '{location}'"))
 }
