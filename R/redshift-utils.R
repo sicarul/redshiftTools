@@ -198,24 +198,20 @@ identify_rs_types <- function (.data, character_length = NA_real_)
     }
     return(x)
   })
+  # Right now we use the same varchar length for all columns in a dataset,
+  # this could be adjusted, but would require something smarter at the recode step
+  # Maybe a map on recode by column, or doing the whole thing in one lapply/map pass?
   max_char_length <- .data %>%
     select(which(classes_first_pass == "character")) %>%
-    map(~ max(nchar(.x %||% "") %||% 0)) %>%
+    map(~ max(nchar(.x, allowNA = TRUE, keepNA = FALSE), na.rm = TRUE)) %>%
     unlist %>%
-    as.numeric %>%
-    {. %||% 0} %>%
-    max
+    max(na.rm = TRUE)
   max_factor_length <- .data %>%
     select(which(classes_first_pass == "factor")) %>%
-    map(~ max(nchar(levels(.x)) %||% 0)) %>%
+    map(~ max(nchar(levels(.x), allowNA = TRUE, keepNA = FALSE), na.rm = TRUE)) %>%
     unlist %>%
-    as.numeric %>%
-    {. %||% 0} %>%
-    max
+    max(na.rm = TRUE)
   varchar_length <- coalesce(character_length, ceiling(max(c(max_char_length, max_factor_length), na.rm = TRUE) * 1.1))
-  if (any("factor" %in% classes_first_pass)) {
-    warning("one of the columns is a factor")
-  }
   data_types <- recode(unlist(classes_first_pass), factor = as.character(glue("VARCHAR({varchar_length})")),
                        numeric = "FLOAT8", integer = "INT", integer64 = "BIGINT", character = as.character(glue("VARCHAR({varchar_length})")),
                        logical = "BOOLEAN", Date = "DATE")

@@ -14,10 +14,9 @@ warnifnoschema <- function(table_name) {
 #'
 #' A simple non-type aware coalece
 #'
-#' @export coalesceifnull %||%
 #' @aliases coalesceifnull %||%
 coalesceifnull <- function(x,y) {return(x %||% y)}
-`%||%` <- function(x, y) if (is.null(x) || length(x) == 0) y else x
+`%||%` <- function(x, y) if (is.null(x) || is.na(x) || length(x) == 0) y else x
 
 
 #' @importFrom reticulate import
