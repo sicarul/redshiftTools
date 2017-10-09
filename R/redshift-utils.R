@@ -201,17 +201,25 @@ identify_rs_types <- function (.data, character_length = NA_real_)
   # Right now we use the same varchar length for all columns in a dataset,
   # this could be adjusted, but would require something smarter at the recode step
   # Maybe a map on recode by column, or doing the whole thing in one lapply/map pass?
-  max_char_length <- .data %>%
-    select(which(classes_first_pass == "character")) %>%
-    map(~ max(nchar(.x, allowNA = TRUE, keepNA = FALSE), na.rm = TRUE)) %>%
-    unlist %>%
-    max(na.rm = TRUE)
-  max_factor_length <- .data %>%
-    select(which(classes_first_pass == "factor")) %>%
-    map(~ max(nchar(levels(.x), allowNA = TRUE, keepNA = FALSE), na.rm = TRUE)) %>%
-    unlist %>%
-    max(na.rm = TRUE)
-  varchar_length <- coalesce(character_length, ceiling(max(c(max_char_length, max_factor_length), na.rm = TRUE) * 1.1))
+  if (!is.na(character_length)) {
+    varchar_length <- character_length
+  } else {
+    max_char_length <- .data %>%
+      select(which(classes_first_pass == "character")) %>%
+      map(~ max(nchar(.x, allowNA = TRUE, keepNA = FALSE), na.rm = TRUE)) %>%
+      unlist %>%
+      max(. %||% 0, na.rm = TRUE)
+    max_factor_length <- .data %>%
+      select(which(classes_first_pass == "factor")) %>%
+      map(~ max(nchar(levels(.x), allowNA = TRUE, keepNA = FALSE), na.rm = TRUE)) %>%
+      unlist %>%
+      max(. %||% 0, na.rm = TRUE)
+    varchar_length <- ceiling(max(c(max_char_length, max_factor_length), na.rm = TRUE)) * 1.1
+  }
+  if(varchar_length > 65535) {
+    warning("Field required varchar longer than 65,535 (a Redshift maximum), setting varchar size to max.  Your data may be truncated.  In addition, this may cause issues, c.f. 'wide tables' http://docs.aws.amazon.com/redshift/latest/dg/r_CREATE_TABLE_usage.html")
+    varchar_length <- 65535
+  }
   data_types <- recode(unlist(classes_first_pass), factor = as.character(glue("VARCHAR({varchar_length})")),
                        numeric = "FLOAT8", integer = "INT", integer64 = "BIGINT", character = as.character(glue("VARCHAR({varchar_length})")),
                        logical = "BOOLEAN", Date = "DATE")
