@@ -2,6 +2,8 @@
 redshiftTools
 =============
 
+[![Join the chat at https://gitter.im/redshiftTools/Lobby](https://badges.gitter.im/redshiftTools/Lobby.svg)](https://gitter.im/redshiftTools/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 This is an R Package meant to easen the uploading of bulk data into Amazon Redshift.
 
 Installation
