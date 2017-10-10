@@ -62,7 +62,6 @@ spectrum_add_partition <- function(dbcon, table_name, part_name, part_value, bas
 #'
 #' @return
 #' @export
-#' @importFrom dbplyr in_schema
 
 create_external_table <- function(dbcon, d, table_name, location, partitioned_by = "") {
   # Check table name
