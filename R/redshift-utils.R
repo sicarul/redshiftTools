@@ -214,7 +214,7 @@ identify_rs_types <- function (.data, character_length = NA_real_)
       map(~ max(nchar(levels(.x), allowNA = TRUE, keepNA = FALSE), na.rm = TRUE)) %>%
       unlist %>%
       max(. %||% 0, na.rm = TRUE)
-    varchar_length <- ceiling(max(c(max_char_length, max_factor_length), na.rm = TRUE)) * 1.1
+    varchar_length <- ceiling(max(c(max_char_length, max_factor_length), na.rm = TRUE) * 1.1) + 1
   }
   if(varchar_length > 65535) {
     warning("Field required varchar longer than 65,535 (a Redshift maximum), setting varchar size to max.  Your data may be truncated.  In addition, this may cause issues, c.f. 'wide tables' http://docs.aws.amazon.com/redshift/latest/dg/r_CREATE_TABLE_usage.html")
