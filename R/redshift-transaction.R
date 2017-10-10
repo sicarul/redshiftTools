@@ -38,7 +38,6 @@ transaction <- function(.data, .dbcon, .function_sequence) {
     DBI::dbExecute(.dbcon, "COMMIT;")
     TRUE
   },
-  warning = function(w) { warning(w) },
   error = function(e) {
     message(e$message)
     DBI::dbExecute(.dbcon, 'ROLLBACK;')
