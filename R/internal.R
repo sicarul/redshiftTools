@@ -40,7 +40,6 @@ bucket_exists <- function(bucket) {
 #' @importFrom aws.s3 put_object
 #' @importFrom utils write.csv
 #' @importFrom zapieR data_science_storage_s3 data_monolith_etl_s3 data_monolith_staging_s3
-
 uploadToS3 <- function(data, bucket, split_files) {
 
   prefix = paste0(sample(letters, 32, replace = TRUE), collapse = "")

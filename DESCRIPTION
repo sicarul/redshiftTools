@@ -9,16 +9,16 @@ Mantainers@R: person("Pablo", "Seibelt", email = "pabloseibelt@sicarul.com",
 Depends:
     R (>= 3.1.2)
 Imports:
-    DBI,
-    RPostgres,
-    aws.s3,
-    glue,
-    parallel,
     assertthat,
+    aws.s3,
+    DBI,
     dplyr,
+    glue,
     magrittr,
+    parallel,
     purrr,
     reticulate,
+    RPostgres,
     stringr,
     whisker,
     zapieR
