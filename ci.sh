@@ -1,6 +1,7 @@
 #!/bin/bash
 
 TAG=redshifttools
+PKG=redshifttools
 DATE=$(date +%Y-%m-%d)
 VERSION=$(grep Version: DESCRIPTION | awk '{print $2}')
 
@@ -13,5 +14,5 @@ docker build -f tests.dockerfile -t ${TAG} .
 
 clean_branch=$(echo $GIT_BRANCH | sed 's.origin/..g')
 
-docker run ${TAG} /root/.local/bin/aws s3 cp ${TAG}_${VERSION}.tar.gz s3://zapier-data-packages/${TAG}/${TAG}_${VERSION}_${clean_branch}_latest.tar.gz
-docker run ${TAG} /root/.local/bin/aws s3 cp ${TAG}_${VERSION}.tar.gz s3://zapier-data-packages/${TAG}/${TAG}_${VERSION}_${clean_branch}_${DATE}.tar.gz
+docker run ${TAG} /root/.local/bin/aws s3 cp ${PKG}_${VERSION}.tar.gz s3://zapier-data-packages/${PKG}/${PKG}_${VERSION}_${clean_branch}_latest.tar.gz
+docker run ${TAG} /root/.local/bin/aws s3 cp ${PKG}_${VERSION}.tar.gz s3://zapier-data-packages/${PKG}/${PKG}_${VERSION}_${clean_branch}_${DATE}.tar.gz
