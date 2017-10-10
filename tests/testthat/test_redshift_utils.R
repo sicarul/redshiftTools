@@ -5,15 +5,14 @@ test_that("correctly infer numeric type", {
 })
 
 test_that("correctly handle factor type", {
-  expect_warning(identify_rs_types(iris))
-  expect_true(suppressWarnings(all(identify_rs_types(iris) == c("FLOAT8", "FLOAT8", "FLOAT8", "FLOAT8", "VARCHAR(11)"))))
+  expect_true(suppressWarnings(all(identify_rs_types(iris) == c("FLOAT8", "FLOAT8", "FLOAT8", "FLOAT8", "VARCHAR(12)"))))
 })
 
 test_that("correctly handle character type", {
   dat <- iris
   dat$Species <- zapieR::unfactor(dat$Species)
   expect_type(dat$Species, "character")
-  expect_true(suppressWarnings(all(identify_rs_types(dat) == c("FLOAT8", "FLOAT8", "FLOAT8", "FLOAT8", "VARCHAR(11)"))))
+  expect_true(suppressWarnings(all(identify_rs_types(dat) == c("FLOAT8", "FLOAT8", "FLOAT8", "FLOAT8", "VARCHAR(12)"))))
 })
 
 test_that("correctly handle time types", {
