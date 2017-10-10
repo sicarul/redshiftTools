@@ -1,6 +1,6 @@
 #!/bin/bash
 
-TAG=redshiftTools
+TAG=redshifttools
 DATE=$(date +%Y-%m-%d)
 VERSION=$(grep Version: DESCRIPTION | awk '{print $2}')
 
