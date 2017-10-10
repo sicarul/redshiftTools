@@ -1,6 +1,13 @@
+log_if_verbose <- function(...) {
+  if (isTRUE(getOption("redshiftTools.verbose"))) {
+    message(...)
+  }
+}
+
 stopifnoschema <- function(table_name) {
   assertthat::assert_that("ident" %in% class(table_name), msg = "Table name must be result of dbplyr::in_schema()")
 }
+
 warnifnoschema <- function(table_name) {
   if (!"ident" %in% class(table_name)) {
     warning("No schema specified for {table_name}, will default to using public")
