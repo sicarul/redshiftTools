@@ -17,9 +17,6 @@ spectrum_add_partition(dbcon, table_name, part_name, part_value, base_location)
 
 \item{base_location}{The base s3:// location of the partition files. It is assumed that the partition is specified as {base_location}/{part_name}={part_value}}
 }
-\value{
-The result of the dbExecute for the command
-}
 \description{
 Add a partition to Redshift Spectrum
 }
