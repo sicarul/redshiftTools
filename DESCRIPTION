@@ -12,11 +12,13 @@ Imports:
     DBI,
     RPostgres,
     aws.s3,
+    glue,
     parallel,
     assertthat,
     dplyr,
     magrittr,
     purrr,
+    reticulate,
     stringr,
     whisker,
     zapieR
