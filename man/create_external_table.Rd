@@ -15,7 +15,7 @@ create_external_table(dbcon, d, table_name, location, partitioned_by = "")
 
 \item{location}{s3:// style url}
 
-\item{partitioned_by}{}
+\item{partitioned_by}{character element containing the column name}
 }
 \description{
 Define the DDL for an External Table
