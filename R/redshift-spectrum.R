@@ -1,3 +1,31 @@
+table_parts <- function(table_name) {
+  return(strsplit(table_name, '.', fixed = TRUE)[[1]])
+}
+
+#' List Spectrum partitions
+#'
+#' Provides character vector of partition names for a given table
+#'
+#' @param dbcon regular db connection object
+#' @param table_name dbplyr::in_schema specification of table name
+#'
+#' @importFrom glue glue
+#' @importFrom DBI dbGetQuery
+#' @importFrom magrittr %>%
+#' @importFrom dplyr pull
+#' @importFrom jsonlite stream_in
+#' @export
+spectrum_list_partitions <- function(dbcon, table_name) {
+  stopifnoschema(table_name)
+  this_table_parts <- table_parts(table_name)
+  dbGetQuery(dbcon, glue("select values from SVV_EXTERNAL_PARTITIONS where schemaname = '{this_table_parts[1]}' and tablename = '{this_table_parts[2]}'")) %>%
+    pull(values) %>%
+    textConnection %>%
+    jsonlite::stream_in(verbose = FALSE) %>% #the factor = 'string' arg didn't seem to work
+    pull(V1) %>%
+    unfactor
+}
+
 #' Remove a partition from Redshift Spectrum
 #'
 #' @param dbcon The database connection to Redshift
@@ -8,11 +36,12 @@
 #' @importFrom glue glue
 #' @importFrom DBI dbExecute
 spectrum_drop_partition <- function(dbcon, table_name, part_name, part_value) {
-  stopifnot("ident" %in% class(table_name))
+  stopifnotschema(table_name)
 
   # if the partition already exists, drop it
-  table_parts <- strsplit(table_name, '.', fixed = TRUE)[[1]]
-  matching_partitions <- nrow(dbGetQuery(dbcon, glue("select * from SVV_EXTERNAL_PARTITIONS where schemaname = '{table_parts[1]}' and tablename = '{table_parts[2]}' and values ILIKE '%{part_value}%'")))
+  this_table_parts <- table_parts(table_name)
+
+  matching_partitions <- nrow(dbGetQuery(dbcon, glue("select * from SVV_EXTERNAL_PARTITIONS where schemaname = '{this_table_parts[1]}' and tablename = '{this_table_parts[2]}' and values ILIKE '%{part_value}%'")))
   if (matching_partitions >= 1) {
     sql_code <- glue("alter table {table_name} drop partition({part_name}='{part_value}')")
     log_if_verbose("Dropping partition: ", sql_code)
@@ -58,7 +87,7 @@ spectrum_add_partition <- function(dbcon, table_name, part_name, part_value, bas
 #' @param d data.frame
 #' @param table_name Result from dbplyr::in_schema specifying the table and the schema
 #' @param location s3:// style url
-#' @param partitioned_by
+#' @param partitioned_by character element containing the column name
 #'
 #' @return
 #' @export
