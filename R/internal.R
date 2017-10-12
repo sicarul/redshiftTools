@@ -127,10 +127,20 @@ get_table_schema <- function(dbcon, table) {
   AND schemaname = '{{schema}}'", list(table_name = target_table, schema = schema)))
 }
 
+#' Fix the order of columns in d to match the underlying Redshift table
+#'
+#' Internal function for redshiftTools
+#'
+#' @param d
+#' @param dbcon
+#' @param table_name
+#' @param strict
+#'
 #' @importFrom whisker whisker.render
 #' @importFrom DBI dbGetQuery
-#' @importFrom dplyr select_
+#' @importFrom dplyr select_ mutate_
 #' @importFrom magrittr %>%
+#' @importFrom stats setNames
 fix_column_order <- function(d, dbcon, table_name, strict = TRUE) {
   if (!"tbl_sql" %in% class(try(dbcon %>% dplyr::tbl(table_name)))) {
     stop(table_name, " does not exist")
