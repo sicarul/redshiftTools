@@ -182,7 +182,7 @@ sanitize_column_names_for_redshift <- function(.data) {
 #' Identify Corresponding Redshift Types
 #'
 #' @param .data \code{data.frame}
-#' @param character_length The length you want for your VARCHAR, by default we'll just use 10% more than the max value we see in the provided data.
+#' @param character_length The length you want for your VARCHAR, by default we'll just use 10\% more than the max value we see in the provided data.
 #'
 #' @return
 #' @export
