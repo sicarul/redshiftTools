@@ -36,7 +36,7 @@ spectrum_list_partitions <- function(dbcon, table_name) {
 #' @importFrom glue glue
 #' @importFrom DBI dbExecute
 spectrum_drop_partition <- function(dbcon, table_name, part_name, part_value) {
-  stopifnotschema(table_name)
+  stopifnoschema(table_name)
 
   # if the partition already exists, drop it
   this_table_parts <- table_parts(table_name)
