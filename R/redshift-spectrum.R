@@ -14,6 +14,7 @@ table_parts <- function(table_name) {
 #' @importFrom magrittr %>%
 #' @importFrom dplyr pull
 #' @importFrom jsonlite stream_in
+#' @importFrom zapieR unfactor
 #' @export
 spectrum_list_partitions <- function(dbcon, table_name) {
   stopifnoschema(table_name)
