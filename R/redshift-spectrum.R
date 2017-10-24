@@ -2,6 +2,7 @@ table_parts <- function(table_name) {
   return(strsplit(table_name, '.', fixed = TRUE)[[1]])
 }
 
+globalVariables(c("V1","values")) #suppresses check note due to NSE
 #' List Spectrum partitions
 #'
 #' Provides character vector of partition names for a given table
@@ -16,7 +17,6 @@ table_parts <- function(table_name) {
 #' @importFrom jsonlite stream_in
 #' @importFrom zapieR unfactor
 #' @export
-globalVariables(c("V1","values")) #suppresses check note due to NSE
 spectrum_list_partitions <- function(dbcon, table_name) {
   stopifnoschema(table_name)
   this_table_parts <- table_parts(table_name)
