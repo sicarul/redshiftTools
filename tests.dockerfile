@@ -11,6 +11,6 @@ RUN Rscript bootstrap.R
 ADD . /code
 WORKDIR /code
 
-RUN Rscript ci.R
+RUN Rscript ci-rs.R
 
 #RUN R CMD build .
