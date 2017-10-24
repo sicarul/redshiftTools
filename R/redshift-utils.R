@@ -267,6 +267,7 @@ view_definition <- function(dbcon, view_name) {
   dbGetQuery(dbcon, whisker.render("select view_definition from information_schema.views where table_name = '{{view_name}}'", list(view_name = view_name)))
 }
 
+globalVariables("present")
 #' Check if table exists
 #'
 #' Passing this check does not mean that the user has access to the table per se.
