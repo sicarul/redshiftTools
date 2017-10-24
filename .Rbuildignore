@@ -3,3 +3,6 @@
 README.Rmd
 ^.*.log
 ci-rs.R
+ci.sh
+bootstrap.R
+tests.dockerfile
