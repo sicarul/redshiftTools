@@ -184,7 +184,7 @@ sanitize_column_names_for_redshift <- function(.data) {
 #' @param .data \code{data.frame}
 #' @param character_length The length you want for your VARCHAR, by default we'll just use 10\% more than the max value we see in the provided data.
 #'
-#' @return
+#' @return character vector
 #' @export
 #'
 #' @importFrom glue glue
@@ -261,7 +261,6 @@ recent_errors <- function(con, n = 10) {
 #' @return character
 #' @export
 #'
-#' @examples
 #' @importFrom whisker whisker.render
 #' @importFrom DBI dbGetQuery
 view_definition <- function(dbcon, view_name) {

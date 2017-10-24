@@ -90,7 +90,7 @@ spectrum_add_partition <- function(dbcon, table_name, part_name, part_value, bas
 #' @param location s3:// style url
 #' @param partitioned_by character element containing the column name
 #'
-#' @return
+#' @return Not specified, dbExecute creates table as side effect
 #' @export
 
 create_external_table <- function(dbcon, d, table_name, location, partitioned_by = "") {

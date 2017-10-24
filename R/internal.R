@@ -132,10 +132,10 @@ get_table_schema <- function(dbcon, table) {
 #'
 #' Internal function for redshiftTools
 #'
-#' @param d
-#' @param dbcon
-#' @param table_name
-#' @param strict
+#' @param d data frame
+#' @param dbcon db connection
+#' @param table_name character element
+#' @param strict boolean
 #'
 #' @importFrom whisker whisker.render
 #' @importFrom DBI dbGetQuery
