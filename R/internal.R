@@ -237,7 +237,7 @@ make_creds <- function(
     return(glue("credentials 'aws_access_key_id={access_key};aws_secret_access_key={secret_key}'"))
   }
 
-  if (!missing(access_key) & !missing(secret_key)) {
+  if (!missing(access_key) && !missing(secret_key) && !is.null(access_key) && !is.null(secret_key)) {
     # Uses access_key and secret_key if provided
     return(gen_credentials(access_key, secret_key))
   } else if (nchar(Sys.getenv('REDSHIFT_ROLE')) > 0) {
