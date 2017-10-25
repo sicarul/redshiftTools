@@ -10,6 +10,7 @@ export PATH=~/.local/bin:$PATH
 docker images | grep ${TAG} | awk '{print $3}' | xargs docker rmi -f || true
 
 docker build -f tests.dockerfile -t ${TAG} .
+docker run -f ${TAG}
 
 clean_branch=$(echo $GIT_BRANCH | sed 's.origin/..g')
 
