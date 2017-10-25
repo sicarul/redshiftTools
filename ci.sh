@@ -5,7 +5,6 @@ PKG=redshiftTools
 DATE=$(date +%Y-%m-%d)
 VERSION=$(grep Version: DESCRIPTION | awk '{print $2}')
 
-pip install awscli --upgrade --user
 export PATH=~/.local/bin:$PATH
 
 docker images | grep ${TAG} | awk '{print $3}' | xargs docker rmi -f || true
