@@ -73,7 +73,7 @@ rs_upsert_table = function(
     })
     stageTable <- paste0(sample(letters, 32, replace=TRUE), collapse = "")
 
-    DBI::dbGetQuery(dbcon, sprintf("create temp table %s (like %s)", stageTable, tableName))
+    DBI::dbExecute(dbcon, sprintf("create temp table %s (like %s)", stageTable, tableName))
 
     message("Copying data from S3 into Redshift")
     DBI::dbExecute(dbcon, sprintf("copy %s from 's3://%s/%s.' region '%s' truncatecolumns acceptinvchars as '^' escape delimiter '|' removequotes gzip ignoreheader 1 emptyasnull STATUPDATE ON COMPUPDATE ON %s;",
