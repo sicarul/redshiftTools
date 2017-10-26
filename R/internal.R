@@ -33,6 +33,24 @@ bucket_exists <- function(bucket) {
   !is.null(boto$connect_s3()$lookup(bucket))
 }
 
+#' Compare data.frame schema (as detected) to db schema
+#'
+#' @param dbcon A database connection object
+#' @param data data.frame
+#' @param table character table name
+#'
+#' @return Side effect of printing result
+#' @export
+#'
+#' @importFrom glue glue
+#' @importFrom dplyr left_join
+#' @importFrom magrittr %>%
+#' @importFrom knitr kable
+compare_schema_d_to_db <- function(dbcon, data, table) {
+  print(kable(DBI::dbGetQuery(dbcon, glue("select \"column\", type as type_on_db from PG_TABLE_DEF where tablename = '{table_name}'")) %>%
+                    left_join(data.frame(column = names(d), detected_type = identify_rs_types(d)), by = "column")))
+}
+
 # Internal utility functions used by the redshift tools
 #'
 #' uploadToS3 handles the -test thing on its own since it uses the zapieR methods
