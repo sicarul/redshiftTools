@@ -1,2 +1,0 @@
-devtools::build()
-devtools::check()
