@@ -10,6 +10,7 @@ ADD . /code
 WORKDIR /code
 
 RUN R CMD build .
+RUN R CMD INSTALL ${TARBALL}
 
 RUN mv ${TARBALL} / && rm -rf * && mv /${TARBALL} .
 
