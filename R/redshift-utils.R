@@ -340,7 +340,7 @@ rs_table_exists <- function(dbcon, table_name) {
 #'
 #' @importFrom glue glue
 #' @importFrom DBI dbExecute
-#'
+#' @export
 update_column_types <- function(data, dbcon, table_name) {
   table_name <- decompose_in_schema(table_name)
   stopifnot(rs_table_exists(dbcon, table_name))
