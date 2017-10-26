@@ -5,6 +5,7 @@
 #' @param dbcon Database connection object of type RPostgreSQL
 #' @param table_name the name of the target table (character)
 #' @param column_name (character)
+#' @param redshift_type (character) for the redshift type to assign for this column
 #'
 #' @return NULL
 #' @export

@@ -263,6 +263,7 @@ globalVariables(".")
 #' @importFrom purrr map
 #' @importFrom whisker whisker.render
 #' @importFrom magrittr %>%
+#' @importFrom dplyr select collect
 recent_errors <- function(con, n = 10) {
   dbGetQuery(con, whisker.render("select colname, type, raw_field_value, err_reason, starttime from [stl_load_errors order by starttime desc limit {{limit}}",
         list(
@@ -274,6 +275,7 @@ recent_errors <- function(con, n = 10) {
     purrr::map(stringr::str_trim) %>%
     as.data.frame()
 }
+globalVariables("starttime")
 
 
 #' Show definition for a view

@@ -6,7 +6,7 @@ test_that("We can insert a row into an existing table", {
   get_n <- function() {dbGetQuery(rs$con, "select count(*) as n from iris") %>% dplyr::pull(n)}
   original_n <- get_n()
   rs_upsert_table(iris[1,], dbcon = rs$con, tableName = "iris", bucket = "zapier-data-science-storage")
-  expect_equal(get_n(), original_n)
+  expect_gte(get_n(), original_n + 1)
 })
 
 ## These tests are commented out because they are destructive

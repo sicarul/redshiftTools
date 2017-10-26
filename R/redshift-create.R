@@ -1,6 +1,8 @@
 #' Create redshift table
 #' @param .data \code{data.frame}
+#' @param dbcon A database connection object
 #' @param table_name \code{character}
+#' @param ... Optional params (not currently used)
 #'
 #' @return The column names that redshift actually ended up using
 #' @importFrom DBI dbExecute

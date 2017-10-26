@@ -22,6 +22,8 @@ warnifnoschema <- function(table_name) {
 #' A simple non-type aware coalece
 #'
 #' @aliases coalesceifnull %||%
+#' @params x left position
+#' @params y right position
 coalesceifnull <- function(x,y) {return(x %||% y)}
 `%||%` <- function(x, y) if (is.null(x) || is.na(x) || length(x) == 0) y else x
 
@@ -54,6 +56,9 @@ compare_schema_d_to_db <- function(dbcon, data, table) {
 # Internal utility functions used by the redshift tools
 #'
 #' uploadToS3 handles the -test thing on its own since it uses the zapieR methods
+#' @param data data.frame
+#' @param bucket character
+#' @param split_files Number of files to split the data.frame into when uploading to S3
 #'
 #' @importFrom aws.s3 put_object
 #' @importFrom utils write.csv
@@ -196,6 +201,7 @@ fix_column_order <- function(d, dbcon, table_name, strict = TRUE) {
 #' and the result can't change quickly because Redshift resizes take quite some time.
 #'
 #' @importFrom memoise memoise timeout
+#' @params dbcon A database connection object
 number_of_slices <- memoise::memoise(function(dbcon) {
   message("Getting number of slices from Redshift")
   slices <- queryDo(dbcon, "select count(1) from stv_slices")
