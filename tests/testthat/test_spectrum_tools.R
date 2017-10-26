@@ -1,6 +1,6 @@
-context("Spectrum Tools")
+#context("Spectrum Tools")
 
-zapieR::make_db_connections()
+#zapieR::make_db_connections()
 
 ## Can't retest creation without being destructive, so test canceled
 # d1 <- cars

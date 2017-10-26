@@ -1,6 +1,6 @@
-context("rs_replace_table()")
+#context("rs_replace_table()")
 
-zapieR::make_db_connections()
+#zapieR::make_db_connections()
 
 ## These tests have been commented out because they are destructive
 # DBI::dbGetQuery(conn = rs$con, statement = "drop table if exists mtcars;")

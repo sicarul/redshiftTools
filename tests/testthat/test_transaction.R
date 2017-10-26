@@ -1,6 +1,6 @@
-context("transaction()")
+#context("transaction()")
 
-zapieR::make_db_connections()
+#zapieR::make_db_connections()
 
 ## Destructive test defered
 # DBI::dbGetQuery(conn = rs$con, statement = "drop table if exists mtcars;")
