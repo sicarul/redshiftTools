@@ -12,7 +12,11 @@ export PATH=~/.local/bin:$PATH
 docker images | grep ${TAG} | awk '{print $3}' | xargs docker rmi -f || true
 
 docker build -f tests.dockerfile -t ${TAG} .
-docker run ${TAG}
+echo AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} > .env
+echo AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} >> .env
+cat .env
+
+docker run --env-file .env ${TAG}
 
 clean_branch=$(echo $GIT_BRANCH | sed 's.origin/..g')
 
