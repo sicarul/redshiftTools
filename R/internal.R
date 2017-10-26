@@ -48,7 +48,7 @@ bucket_exists <- function(bucket) {
 #' @importFrom knitr kable
 compare_schema_d_to_db <- function(dbcon, data, table) {
   print(kable(DBI::dbGetQuery(dbcon, glue("select \"column\", type as type_on_db from PG_TABLE_DEF where tablename = '{table_name}'")) %>%
-                    left_join(data.frame(column = names(d), detected_type = identify_rs_types(d)), by = "column")))
+                    left_join(data.frame(column = names(data), detected_type = identify_rs_types(data)), by = "column")))
 }
 
 # Internal utility functions used by the redshift tools
