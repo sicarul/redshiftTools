@@ -189,20 +189,43 @@ fix_column_order <- function(d, dbcon, table_name, strict = TRUE) {
   d %>% select_(.dots = paste0("`", column_names, "`"))
 }
 
+#' Find the number of slices on the cluster
+#'
+#' We use this as a hint for how many pieces we should slice our data into.
+#' We memoise this query for 1 hour because we may end up doing it several times,
+#' and the result can't change quickly because Redshift resizes take quite some time.
+#'
+#' @importFrom memoise memoise timeout
+number_of_slices <- memoise::memoise(function(dbcon) {
+  message("Getting number of slices from Redshift")
+  slices <- queryDo(dbcon, "select count(1) from stv_slices")
+  unlist(slices[1]*4)
+}, ~timeout(60 * 60))
+
+#' Identify the number of files to generate given a dataset
+#'
+#' Per Redshift documentation we're aiming for between 1 MB and 1 GB (after compression).
+#' Since we know almost nothing about how much compression we'll get, we'll target 100 MB
+#' raw sizes with the expectation that we'll compress down to something north of 1 MB and
+#' with the fervent hope that we'll upload files in parallel again at some point.
+#'
+#' @param data data.frame
+#' @param dbcon the database connection
 choose_number_of_splits <- function(data, dbcon) {
-    message("Getting number of slices from Redshift")
-    slices <- queryDo(dbcon,"select count(*) from stv_slices")
-    split_files <- unlist(slices[1]*4)
+    mb_target <- 100
+    slices <- number_of_slices(dbcon)
+    object_size_in_mb <- as.numeric(object.size(data)/1024/1024)
     # check for execessive fragmentation
-    rows_per_split <- nrow(data) / (slices[1] * 4)
-    if (rows_per_split < 1000) {
-      split_files <- slices[1]
-      # no need for more splits than there are rows
-      if (split_files > nrow(data)) {
-        split_files <- 1
-      }
+    if (object_size_in_mb <= slices) {
+      split_files <- 1
+    } else {
+      # If more than slices mb per slice, then open up a new round of slices
+      split_files <- (floor(object_size_in_mb / mb_target / slices) + 1) * slices
     }
-    # No need for more splits than files
+    # Sanity check: No need for more splits than rows
+    if (nrow(data) < split_files) {
+      split_files <- 1
+    }
     message(sprintf("%s slices detected, will split into %s files", slices, split_files))
   return(split_files)
 }
