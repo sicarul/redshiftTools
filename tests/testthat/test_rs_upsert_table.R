@@ -76,12 +76,12 @@ test_that("Dynamic columns, strict = FALE", {
   dbGetQuery(rs_db()$con, "drop table if exists iris")
   iris$Species <- as.character(iris$Species)
   names(iris) <- gsub(".", "_", names(iris), fixed = TRUE)
-  the original dat is missing one column
+  #the original dat is missing one column
   original <- iris[1:10, -1]
   original %T>%
     rs_create_table(rs_db()$con, "iris") %>%
     rs_upsert_table(rs_db()$con, "iris",bucket = "zapier-data-science-storage")
-  the new data is missing a different column
+  #the new data is missing a different column
   new <- iris[11:20,-2]
   original %T>%
     rs_create_table(rs_db()$con, "iris") %>%
