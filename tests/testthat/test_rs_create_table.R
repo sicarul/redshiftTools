@@ -1,4 +1,3 @@
-Sys.setenv(REDSHIFT_ROLE = 'arn:aws:iam::996097627176:role/production-redshift')
 context("rs_create_table")
 
 zapieR::make_db_connections()
