@@ -14,13 +14,16 @@ Imports:
     data.table,
     DBI,
     dplyr,
+    dbplyr,
     glue,
     jsonlite,
+    knitr,
     magrittr,
+    memoise,
     parallel,
     purrr,
     reticulate,
-    RPostgres,
+    rlang,
     stringr,
     whisker,
     zapieR
@@ -29,5 +32,4 @@ License: MIT + file LICENSE
 LazyData: TRUE
 RoxygenNote: 6.0.1.9000
 Suggests: testthat,
-    lubridate,
-    dbplyr
+    lubridate

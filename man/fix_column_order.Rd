@@ -7,7 +7,13 @@
 fix_column_order(d, dbcon, table_name, strict = TRUE)
 }
 \arguments{
-\item{strict}{}
+\item{d}{data frame}
+
+\item{dbcon}{db connection}
+
+\item{table_name}{character element}
+
+\item{strict}{boolean}
 }
 \description{
 Internal function for redshiftTools

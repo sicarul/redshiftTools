@@ -9,7 +9,11 @@ rs_create_table(.data, dbcon, table_name, ...)
 \arguments{
 \item{.data}{\code{data.frame}}
 
+\item{dbcon}{A database connection object}
+
 \item{table_name}{\code{character}}
+
+\item{...}{Optional params (not currently used)}
 }
 \value{
 The column names that redshift actually ended up using

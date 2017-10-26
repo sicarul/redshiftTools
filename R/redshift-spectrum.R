@@ -2,6 +2,7 @@ table_parts <- function(table_name) {
   return(strsplit(table_name, '.', fixed = TRUE)[[1]])
 }
 
+globalVariables(c("V1","values")) #suppresses check note due to NSE
 #' List Spectrum partitions
 #'
 #' Provides character vector of partition names for a given table
@@ -70,7 +71,7 @@ spectrum_add_partition <- function(dbcon, table_name, part_name, part_value, bas
   stopifnot("ident" %in% class(table_name))
 
   # if the partition already exists, drop it
-  table_parts <- strsplit(table_name, '.', fixed = TRUE)[[1]]
+  table_parts <- table_parts(table_name)
   matching_partitions <- nrow(dbGetQuery(dbcon, glue("select * from SVV_EXTERNAL_PARTITIONS where schemaname = '{table_parts[1]}' and tablename = '{table_parts[2]}' and values ILIKE '%{part_value}%'")))
   if (matching_partitions >= 1) {
     log_if_verbose(glue("Partition already exists, {part_name}='{part_value}'"))
@@ -90,7 +91,7 @@ spectrum_add_partition <- function(dbcon, table_name, part_name, part_value, bas
 #' @param location s3:// style url
 #' @param partitioned_by character element containing the column name
 #'
-#' @return
+#' @return Not specified, dbExecute creates table as side effect
 #' @export
 
 create_external_table <- function(dbcon, d, table_name, location, partitioned_by = "") {

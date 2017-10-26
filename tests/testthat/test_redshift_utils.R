@@ -1,5 +1,11 @@
 context("redshift-utils.R")
 
+test_that("can decompose in_schema", {
+  eg <- redshiftTools::decompose_in_schema(dbplyr::in_schema("s", "t"))
+  expect_equal(attr(eg, "table_name"), "t")
+  expect_equal(attr(eg, "schema_name"), "s")
+})
+
 test_that("correctly infer numeric type", {
   expect_true(all(identify_rs_types(cars) == "FLOAT8"))
 })

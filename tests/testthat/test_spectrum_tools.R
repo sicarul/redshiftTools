@@ -1,8 +1,8 @@
-context("Spectrum Tools")
-
-zapieR::make_db_connections()
-
-## Can't retest creation without being destructive, so test canceled
+# context("Spectrum Tools")
+#
+# zapieR::make_db_connections()
+#
+# ## Can't retest creation without being destructive, so test canceled
 # d1 <- cars
 # d1$moo <- lubridate::today()
 #

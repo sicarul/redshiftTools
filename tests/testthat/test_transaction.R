@@ -1,8 +1,8 @@
-context("transaction()")
+# context("transaction()")
 
-zapieR::make_db_connections()
+# zapieR::make_db_connections()
 
-## Destructive test defered
+# Destructive test defered
 # DBI::dbGetQuery(conn = rs$con, statement = "drop table if exists mtcars;")
 #
 #
@@ -18,11 +18,8 @@ zapieR::make_db_connections()
 #       )
 #     )
 #   })
-#
 #   uploaded_mtcars <- function() { DBI::dbGetQuery(rs$con, "select * from mtcars") }
-#
 #   expect_equal(dim(uploaded_mtcars()), dim(mtcars))
 # })
-#
 # DBI::dbGetQuery(conn = rs$con, statement = "drop table if exists mtcars;")
 #

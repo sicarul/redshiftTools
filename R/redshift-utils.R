@@ -149,6 +149,26 @@ WHERE
 WITH
 WITHOUT"))
 
+#' Decorate in_schema for easy decomposition
+#'
+#' @param table Character table name (assumed to be in the public schema) or dbplyr::in_schema
+#'
+#' @return dbplyr::in_schema with attributes 'table_name' and 'schema_name'
+#' @export
+#'
+#' @importFrom dbplyr in_schema
+#' @importFrom rlang set_attrs
+decompose_in_schema <- function(table) {
+  schema_present <- warnifnoschema(table)
+  if (schema_present) {
+    parts <- table_parts(table)
+    return(set_attrs(table, table_name = parts[2], schema_name = parts[1]))
+  } else {
+    stopifnot("character" %in% class(table))
+    decompose_in_schema(dbplyr::in_schema("public", table))
+  }
+}
+
 #' Make Column Names that Redshift Can Be Happy With
 #'
 #' @param .data data.frame or character vector
@@ -184,7 +204,7 @@ sanitize_column_names_for_redshift <- function(.data) {
 #' @param .data \code{data.frame}
 #' @param character_length The length you want for your VARCHAR, by default we'll just use 10\% more than the max value we see in the provided data.
 #'
-#' @return
+#' @return character vector
 #' @export
 #'
 #' @importFrom glue glue
@@ -225,6 +245,7 @@ identify_rs_types <- function (.data, character_length = NA_real_)
                        logical = "BOOLEAN", Date = "DATE")
   return(data_types)
 }
+globalVariables(".")
 
 #' Find recent redshift errors
 #'
@@ -240,17 +261,21 @@ identify_rs_types <- function (.data, character_length = NA_real_)
 #' @importFrom stringr str_trim
 #' @importFrom dplyr arrange desc select collect
 #' @importFrom purrr map
+#' @importFrom whisker whisker.render
+#' @importFrom magrittr %>%
+#' @importFrom dplyr select collect
 recent_errors <- function(con, n = 10) {
-  dbGetQuery(con, whisker.render("select colname, type, raw_field_value, err_reason, starttime from stl_load_errors limit {{limit}}",
+  dbGetQuery(con, whisker.render("select colname, type, raw_field_value, err_reason, starttime from [stl_load_errors order by starttime desc limit {{limit}}",
         list(
           limit = n
         )
-  )) %>% arrange(desc(starttime)) %>%
+  )) %>%
     select(-starttime) %>%
     collect(n = Inf) %>%
     purrr::map(stringr::str_trim) %>%
     as.data.frame()
 }
+globalVariables("starttime")
 
 
 #' Show definition for a view
@@ -261,13 +286,13 @@ recent_errors <- function(con, n = 10) {
 #' @return character
 #' @export
 #'
-#' @examples
 #' @importFrom whisker whisker.render
 #' @importFrom DBI dbGetQuery
 view_definition <- function(dbcon, view_name) {
   dbGetQuery(dbcon, whisker.render("select view_definition from information_schema.views where table_name = '{{view_name}}'", list(view_name = view_name)))
 }
 
+globalVariables("present")
 #' Check if table exists
 #'
 #' Passing this check does not mean that the user has access to the table per se.
@@ -307,3 +332,39 @@ rs_table_exists <- function(dbcon, table_name) {
       pull(present)
   )
 }
+
+#' Update column types to what we auto-detect
+#'
+#' @param data Data that we'll use to sense column types (and name columns)
+#' @param dbcon Database connection to Redshift
+#' @param table_name Preferably a dbplyr::in_schema specification of table_name
+#'
+#' @return Not specified, function for side effect
+#'
+#' @importFrom glue glue
+#' @importFrom DBI dbExecute
+#' @export
+update_column_types <- function(data, dbcon, table_name) {
+  table_name <- decompose_in_schema(table_name)
+  stopifnot(rs_table_exists(dbcon, table_name))
+  tryCatch({
+    log_if_verbose("Starting transaction to update column types")
+    dbExecute(dbcon, "BEGIN")
+    log_if_verbose("Renaming original table")
+    dbExecute(dbcon, glue("ALTER TABLE {table_name} RENAME TO {table_name}_OLD"))
+    log_if_verbose("Creating empty table with new schema")
+    rs_create_table(.data = data, dbcon = dbcon, table_name = table_name)
+    log_if_verbose("Copying (and casting) data from old table to new table")
+    dbExecute(dbcon, glue("INSERT INTO {table_name} WITH CTE AS (
+      SELECT {paste0(paste0(redshiftTools:::sanitize_column_names_for_redshift(names(d)),'::',identify_rs_types(d)), collapse = ',')}
+      FROM {table_name}_OLD
+    )
+    SELECT * FROM CTE"))
+    log_if_verbose("Copying (and casting) data from old table to new table")
+    dbExecute(dbcon, "END")
+  },
+  error = function(e) {
+    dbExecute(dbcon, "ROLLBACK")
+  })
+}
+

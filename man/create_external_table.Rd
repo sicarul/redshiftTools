@@ -17,6 +17,9 @@ create_external_table(dbcon, d, table_name, location, partitioned_by = "")
 
 \item{partitioned_by}{character element containing the column name}
 }
+\value{
+Not specified, dbExecute creates table as side effect
+}
 \description{
 Define the DDL for an External Table
 }

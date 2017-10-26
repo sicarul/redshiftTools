@@ -22,6 +22,8 @@ warnifnoschema <- function(table_name) {
 #' A simple non-type aware coalece
 #'
 #' @aliases coalesceifnull %||%
+#' @params x left position
+#' @params y right position
 coalesceifnull <- function(x,y) {return(x %||% y)}
 `%||%` <- function(x, y) if (is.null(x) || is.na(x) || length(x) == 0) y else x
 
@@ -33,9 +35,30 @@ bucket_exists <- function(bucket) {
   !is.null(boto$connect_s3()$lookup(bucket))
 }
 
+#' Compare data.frame schema (as detected) to db schema
+#'
+#' @param dbcon A database connection object
+#' @param data data.frame
+#' @param table character table name
+#'
+#' @return Side effect of printing result
+#' @export
+#'
+#' @importFrom glue glue
+#' @importFrom dplyr left_join
+#' @importFrom magrittr %>%
+#' @importFrom knitr kable
+compare_schema_d_to_db <- function(dbcon, data, table) {
+  print(kable(DBI::dbGetQuery(dbcon, glue("select \"column\", type as type_on_db from PG_TABLE_DEF where tablename = '{table_name}'")) %>%
+                    left_join(data.frame(column = names(data), detected_type = identify_rs_types(data)), by = "column")))
+}
+
 # Internal utility functions used by the redshift tools
 #'
 #' uploadToS3 handles the -test thing on its own since it uses the zapieR methods
+#' @param data data.frame
+#' @param bucket character
+#' @param split_files Number of files to split the data.frame into when uploading to S3
 #'
 #' @importFrom aws.s3 put_object
 #' @importFrom utils write.csv
@@ -132,10 +155,10 @@ get_table_schema <- function(dbcon, table) {
 #'
 #' Internal function for redshiftTools
 #'
-#' @param d
-#' @param dbcon
-#' @param table_name
-#' @param strict
+#' @param d data frame
+#' @param dbcon db connection
+#' @param table_name character element
+#' @param strict boolean
 #'
 #' @importFrom whisker whisker.render
 #' @importFrom DBI dbGetQuery
@@ -175,20 +198,45 @@ fix_column_order <- function(d, dbcon, table_name, strict = TRUE) {
   d %>% select_(.dots = paste0("`", column_names, "`"))
 }
 
+#' Find the number of slices on the cluster
+#'
+#' We use this as a hint for how many pieces we should slice our data into.
+#' We memoise this query for 1 hour because we may end up doing it several times,
+#' and the result can't change quickly because Redshift resizes take quite some time.
+#'
+#' @importFrom memoise memoise timeout
+#' @params dbcon A database connection object
+number_of_slices <- memoise::memoise(function(dbcon) {
+  message("Getting number of slices from Redshift")
+  slices <- queryDo(dbcon, "select count(1) from stv_slices")
+  unlist(slices[1]*4)
+}, ~timeout(60 * 60))
+
+#' Identify the number of files to generate given a dataset
+#'
+#' Per Redshift documentation we're aiming for between 1 MB and 1 GB (after compression).
+#' Since we know almost nothing about how much compression we'll get, we'll target 100 MB
+#' raw sizes with the expectation that we'll compress down to something north of 1 MB and
+#' with the fervent hope that we'll upload files in parallel again at some point.
+#'
+#' @param data data.frame
+#' @param dbcon the database connection
+#' @importFrom utils object.size
 choose_number_of_splits <- function(data, dbcon) {
-    message("Getting number of slices from Redshift")
-    slices <- queryDo(dbcon,"select count(*) from stv_slices")
-    split_files <- unlist(slices[1]*4)
+    mb_target <- 100
+    slices <- number_of_slices(dbcon)
+    object_size_in_mb <- as.numeric(object.size(data)/1024/1024)
     # check for execessive fragmentation
-    rows_per_split <- nrow(data) / (slices[1] * 4)
-    if (rows_per_split < 1000) {
-      split_files <- slices[1]
-      # no need for more splits than there are rows
-      if (split_files > nrow(data)) {
-        split_files <- 1
-      }
+    if (object_size_in_mb <= slices) {
+      split_files <- 1
+    } else {
+      # If more than slices mb per slice, then open up a new round of slices
+      split_files <- (floor(object_size_in_mb / mb_target / slices) + 1) * slices
     }
-    # No need for more splits than files
+    # Sanity check: No need for more splits than rows
+    if (nrow(data) < split_files) {
+      split_files <- 1
+    }
     message(sprintf("%s slices detected, will split into %s files", slices, split_files))
   return(split_files)
 }

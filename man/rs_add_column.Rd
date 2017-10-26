@@ -12,6 +12,8 @@ rs_add_column(dbcon, table_name, column_name, redshift_type)
 \item{table_name}{the name of the target table (character)}
 
 \item{column_name}{(character)}
+
+\item{redshift_type}{(character) for the redshift type to assign for this column}
 }
 \description{
 Add a typed column to a redshift database

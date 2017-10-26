@@ -6,6 +6,13 @@
 \usage{
 uploadToS3(data, bucket, split_files)
 }
+\arguments{
+\item{data}{data.frame}
+
+\item{bucket}{character}
+
+\item{split_files}{Number of files to split the data.frame into when uploading to S3}
+}
 \description{
 uploadToS3 handles the -test thing on its own since it uses the zapieR methods
 }

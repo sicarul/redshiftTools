@@ -1,12 +1,10 @@
-Sys.setenv(REDSHIFT_ROLE = 'arn:aws:iam::996097627176:role/production-redshift')
-context("rs_replace_table()")
-
-zapieR::make_db_connections()
-
-## These tests have been commented out because they are destructive
+# context("rs_replace_table()")
+#
+# zapieR::make_db_connections()
+#
+# ## These tests have been commented out because they are destructive
 # DBI::dbGetQuery(conn = rs$con, statement = "drop table if exists mtcars;")
 # rs_create_table(.data = mtcars, dbcon = rs$con, table_name = "mtcars")
-#
 # test_that(
 #   "The table mtcars can be replaced on Redshift", {
 #     uploaded_mtcars <- function() { DBI::dbGetQuery(rs$con, "select * from mtcars") }
@@ -24,6 +22,5 @@ zapieR::make_db_connections()
 #     expect_equal(dim(uploaded_mtcars()), dim(mtcars))
 #   }
 # )
-#
 # DBI::dbGetQuery(conn = rs$con, statement = "drop table if exists mtcars;")
-
+#

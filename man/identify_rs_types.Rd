@@ -11,6 +11,9 @@ identify_rs_types(.data, character_length = NA_real_)
 
 \item{character_length}{The length you want for your VARCHAR, by default we'll just use 10\% more than the max value we see in the provided data.}
 }
+\value{
+character vector
+}
 \description{
 Identify Corresponding Redshift Types
 }
