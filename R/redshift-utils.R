@@ -149,6 +149,26 @@ WHERE
 WITH
 WITHOUT"))
 
+#' Decorate in_schema for easy decomposition
+#'
+#' @param table Character table name (assumed to be in the public schema) or dbplyr::in_schema
+#'
+#' @return dbplyr::in_schema with attributes 'table_name' and 'schema_name'
+#' @export
+#'
+#' @importFrom dbplyr in_schema
+#' @importFrom rlang set_attrs
+decompose_in_schema <- function(table) {
+  schema_present <- warnifnoschema(table)
+  if (schema_present) {
+    parts <- table_parts(table)
+    return(set_attrs(table, table_name = parts[2], schema_name = parts[1]))
+  } else {
+    stopifnot("character" %in% class(table))
+    decompose_in_schema(dbplyr::in_schema("public", table))
+  }
+}
+
 #' Make Column Names that Redshift Can Be Happy With
 #'
 #' @param .data data.frame or character vector
