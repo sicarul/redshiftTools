@@ -16,8 +16,6 @@ docker build -f tests.dockerfile -t ${TAG} .
 echo AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} > .env
 echo AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} >> .env
 echo AWS_DEFAULT_REGION=us-east-1 >> .env
-echo PKG=${PKG} >> .env
-echo VERSION=${VERSION} >> .env
 
 docker run --env-file .env ${TAG}
 

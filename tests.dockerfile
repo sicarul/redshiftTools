@@ -1,6 +1,8 @@
 FROM 996097627176.dkr.ecr.us-east-1.amazonaws.com/data-zapier-nightly:latest
 
 ENV ENVIRONMENT=production
+ENV PKG=redshiftTools
+ENV VERSION=0.1.2
 ENV TARBALL=${PKG}_${VERSION}.tar.gz
 ENV REDSHIFT_ROLE='arn:aws:iam::996097627176:role/production-redshift'
 
