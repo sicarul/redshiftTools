@@ -211,6 +211,7 @@ number_of_slices <- memoise::memoise(function(dbcon) {
 #'
 #' @param data data.frame
 #' @param dbcon the database connection
+#' @importFrom utils object.size
 choose_number_of_splits <- function(data, dbcon) {
     mb_target <- 100
     slices <- number_of_slices(dbcon)
