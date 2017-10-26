@@ -245,6 +245,7 @@ identify_rs_types <- function (.data, character_length = NA_real_)
                        logical = "BOOLEAN", Date = "DATE")
   return(data_types)
 }
+globalVariables(".")
 
 #' Find recent redshift errors
 #'
