@@ -23,6 +23,7 @@ Imports:
     parallel,
     purrr,
     reticulate,
+    rlang,
     stringr,
     whisker,
     zapieR
