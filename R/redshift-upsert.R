@@ -61,7 +61,7 @@ rs_upsert_table = function(
   # this functon is only intended in the processs of control flow
   # the occurs immediately after. This function does pretty much
   # all the work. it's not a pure function!
-  upsert <- function(data, dbcon, keys) {
+  upsert <- function(data, dbcon, keys) {tryCatch({
     raw_bucket <- paste0(bucket, if (Sys.getenv('ENVIRONMENT') == 'production') "" else "-test")
     split_files <- min(split_files, nrow(data))
 
@@ -77,11 +77,11 @@ rs_upsert_table = function(
 
     message("Copying data from S3 into Redshift")
     DBI::dbExecute(dbcon, sprintf("copy %s from 's3://%s/%s.' region '%s' truncatecolumns acceptinvchars as '^' escape delimiter '|' removequotes gzip ignoreheader 1 emptyasnull STATUPDATE ON COMPUPDATE ON %s;",
-                                   stageTable,
-                                   raw_bucket,
-                                   prefix,
-                                   region,
-                                   make_creds()
+                                  stageTable,
+                                  raw_bucket,
+                                  prefix,
+                                  region,
+                                  make_creds()
     ))
 
     if(!is.null(keys)) {
@@ -89,16 +89,26 @@ rs_upsert_table = function(
       keysCond <- paste(stageTable,".", keys, "=", tableName, ".", keys, sep="")
       keysWhere <- sub(" and $", "", paste0(keysCond, collapse="", sep=" and "))
       DBI::dbExecute(dbcon, sprintf('delete from %s using %s where %s;',
-                                     tableName,
-                                     stageTable,
-                                     keysWhere
+                                    tableName,
+                                    stageTable,
+                                    keysWhere
       ))
     }
 
     message("Insert new rows")
     DBI::dbExecute(dbcon, sprintf('insert into %s (select * from %s);', tableName, stageTable))
     DBI::dbExecute(dbcon, sprintf("drop table %s;", stageTable))
+  },
+  error = function(e) {
+    warning(paste0("Error detected, bubling up", e))
+    if (exists("stageTable")) {
+      message("Outputing schemas to compare...")
+      compare_schema_d_to_db(data, stageTable)
+    }
+    stop(e)
   }
+  )}
+
 
   if(use_transaction) {
     transaction(.data = data,
