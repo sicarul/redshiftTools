@@ -14,6 +14,7 @@ docker images | grep ${TAG} | awk '{print $3}' | xargs docker rmi -f || true
 docker build -f tests.dockerfile -t ${TAG} .
 echo AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} > .env
 echo AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} >> .env
+echo AWS_DEFAULT_REGION=us-east-1 >> .env
 
 docker run --env-file .env ${TAG}
 
