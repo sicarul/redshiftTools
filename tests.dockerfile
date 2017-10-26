@@ -16,4 +16,6 @@ RUN R CMD build .
 
 RUN mv ${TARBALL} / && rm -rf * && mv /${TARBALL} .
 
+RUN echo ${AWS_ACCESS_KEY_ID}
+
 CMD R CMD check ${TARBALL}
