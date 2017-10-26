@@ -8,10 +8,14 @@
 #' @export
 rs_create_table <- function(.data, dbcon, table_name, ...) {
   warnifnoschema(table_name)
+  # Check table name
+  if (grepl("-", table_name, fixed = TRUE)) {
+    stop("Hyphen in table name not allowed")
+  }
   spec <- rs_create_table_spec(.data)
   sql_code <- whisker::whisker.render("CREATE TABLE IF NOT EXISTS {{table_name}} {{spec}}")
   DBI::dbExecute(dbcon, sql_code)
-  return(column_names)
+  return(sanitize_column_names_for_redshift(names(.data)))
 }
 
 #' Creates an Redshift column spec given a data.frame
@@ -22,10 +26,6 @@ rs_create_table <- function(.data, dbcon, table_name, ...) {
 #' @export
 rs_create_table_spec <- function(data) {
   data_types <- identify_rs_types(data)
-  # Check table name
-  if (grepl("-", table_name, fixed = TRUE)) {
-    stop("Hyphen in table name not allowed")
-  }
   # Identify and mutate column names
   column_names <- sanitize_column_names_for_redshift(names(data))
 
