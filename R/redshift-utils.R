@@ -329,3 +329,39 @@ rs_table_exists <- function(dbcon, table_name) {
       pull(present)
   )
 }
+
+#' Update column types to what we auto-detect
+#'
+#' @param data Data that we'll use to sense column types (and name columns)
+#' @param dbcon Database connection to Redshift
+#' @param table_name Preferably a dbplyr::in_schema specification of table_name
+#'
+#' @return Not specified, function for side effect
+#'
+#' @importFrom glue glue
+#' @importFrom DBI dbExecute
+#'
+update_column_types <- function(data, dbcon, table_name) {
+  table_name <- decompose_in_schema(table_name)
+  stopifnot(rs_table_exists(dbcon, table_name))
+  tryCatch({
+    log_if_verbose("Starting transaction to update column types")
+    dbExecute(dbcon, "BEGIN")
+    log_if_verbose("Renaming original table")
+    dbExecute(dbcon, glue("ALTER TABLE {table_name} RENAME TO {table_name}_OLD"))
+    log_if_verbose("Creating empty table with new schema")
+    rs_create_table(.data = data, dbcon = dbcon, table_name = table_name)
+    log_if_verbose("Copying (and casting) data from old table to new table")
+    dbExecute(dbcon, glue("INSERT INTO {table_name} WITH CTE AS (
+      SELECT {paste0(paste0(redshiftTools:::sanitize_column_names_for_redshift(names(d)),'::',identify_rs_types(d)), collapse = ',')}
+      FROM {table_name}_OLD
+    )
+    SELECT * FROM CTE"))
+    log_if_verbose("Copying (and casting) data from old table to new table")
+    dbExecute(dbcon, "END")
+  },
+  error = function(e) {
+    dbExecute(dbcon, "ROLLBACK")
+  })
+}
+
