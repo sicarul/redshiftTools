@@ -296,10 +296,9 @@ view_definition <- function(dbcon, view_name) {
       from PG_VIEWS
       where viewname = '{attr(view_name, \'table_name\')}' and schemaname = '{attr(view_name, \'schema_name\')}'
       ")
-  ) %>% pull(definition)
+  ) %>% pull("definition")
 }
 
-globalVariables("present")
 #' Check if table exists
 #'
 #' Passing this check does not mean that the user has access to the table per se.
@@ -327,7 +326,7 @@ rs_table_exists <- function(dbcon, table_name) {
     dbcon,
     whisker.render.recursive(select_exists, list(query = check_external_schema_exists, schemaname = schemaname))
   )  %>%
-    pull(present)
+    pull("present")
 
   check_method <- ifelse(schema_is_external, check_external_schema, check_internal_schema)
 
