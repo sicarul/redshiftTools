@@ -286,10 +286,17 @@ globalVariables("starttime")
 #' @return character
 #' @export
 #'
-#' @importFrom whisker whisker.render
+#' @importFrom glue glue
 #' @importFrom DBI dbGetQuery
 view_definition <- function(dbcon, view_name) {
-  dbGetQuery(dbcon, whisker.render("select view_definition from information_schema.views where table_name = '{{view_name}}'", list(view_name = view_name)))
+  view_name <- decompose_in_schema(view_name)
+  dbGetQuery(
+    dbcon,
+    glue("select definition
+      from PG_VIEWS
+      where viewname = '{attr(view_name, \'table_name\')}' and schemaname = '{attr(view_name, \'schema_name\')}'
+      ")
+  ) %>% pull(definition)
 }
 
 globalVariables("present")
