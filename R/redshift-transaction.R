@@ -21,30 +21,32 @@
 #' }
 #'
 transaction <- function(.data, .dbcon, .function_sequence) {
-  result = tryCatch({
-    message("Beginning transaction")
-    if ("pqConnection" %in% class(.dbcon)) {
-      DBI::dbBegin(.dbcon)
-      warning("pqConnection is going to give you a bad time")
-    } else {
-      DBI::dbGetQuery(.dbcon, "BEGIN;")
+  result <- tryCatch(
+    {
+      message("Beginning transaction")
+      if ("pqConnection" %in% class(.dbcon)) {
+        DBI::dbBegin(.dbcon)
+        warning("pqConnection is going to give you a bad time")
+      } else {
+        DBI::dbGetQuery(.dbcon, "BEGIN;")
+      }
+
+      lapply(.function_sequence, function(.f) {
+        .f(.data, .dbcon, use_transaction = FALSE)
+      })
+
+      message("Committing changes")
+      DBI::dbExecute(.dbcon, "COMMIT;")
+      TRUE
+    },
+    error = function(e) {
+      message(e$message)
+      DBI::dbExecute(.dbcon, "ROLLBACK;")
+      message("Rollback complete")
+      FALSE
     }
-
-    lapply(.function_sequence, function(.f){
-      .f(.data, .dbcon, use_transaction = FALSE)
-    })
-
-    message("Committing changes")
-    DBI::dbExecute(.dbcon, "COMMIT;")
-    TRUE
-  },
-  error = function(e) {
-    message(e$message)
-    DBI::dbExecute(.dbcon, 'ROLLBACK;')
-    message("Rollback complete")
-    FALSE
-  })
-  if(is.null(result) || !isTRUE(result)) {
+  )
+  if (is.null(result) || !isTRUE(result)) {
     stop("A redshift error occured")
   }
   return(result)

@@ -16,7 +16,7 @@
 #'
 #' a=data.frame(a=seq(1,10000), b=seq(10000,1))
 #'
-#'\dontrun{
+#' \dontrun{
 #' con <- dbConnect(RPostgres::Postgres(), dbname="dbname",
 #' host='my-redshift-url.amazon.com', port='5439',
 #' user='myuser', password='mypassword',sslmode='require')
@@ -28,21 +28,19 @@
 #' @export
 #' @importFrom DBI dbExecute
 rs_replace_table <- function(
-  data,
-  dbcon,
-  tableName,
-  split_files,
-  bucket = Sys.getenv('AWS_BUCKET_NAME'),
-  region = Sys.getenv('AWS_DEFAULT_REGION'),
-  # the internal make_creds() handles the defaults for these params
-  access_key = NULL,
-  secret_key = NULL,
-  remove_quotes = TRUE,
-  strict = TRUE,
-  use_transaction = TRUE
-) {
-
-  if(missing(split_files)){
+                             data,
+                             dbcon,
+                             tableName,
+                             split_files,
+                             bucket = Sys.getenv("AWS_BUCKET_NAME"),
+                             region = Sys.getenv("AWS_DEFAULT_REGION"),
+                             # the internal make_creds() handles the defaults for these params
+                             access_key = NULL,
+                             secret_key = NULL,
+                             remove_quotes = TRUE,
+                             strict = TRUE,
+                             use_transaction = TRUE) {
+  if (missing(split_files)) {
     split_files <- choose_number_of_splits(data, dbcon)
   }
 
@@ -50,35 +48,38 @@ rs_replace_table <- function(
   # the occurs immediately after. This function does pretty much
   # all the work. it's not a pure function!
   replace <- function(data, dbcon) {
-
     split_files <- min(split_files, nrow(data))
     data <- fix_column_order(data, dbcon, table_name = tableName, strict = strict)
     prefix <- uploadToS3(data, bucket, split_files)
-    raw_bucket <- paste0(bucket, if (Sys.getenv('ENVIRONMENT') == 'production') "" else "-test")
+    raw_bucket <- paste0(bucket, if (Sys.getenv("ENVIRONMENT") == "production") "" else "-test")
     on.exit({
       message("Deleting temporary files from S3 bucket")
       deletePrefix(prefix, raw_bucket, split_files)
     })
     message("Truncating target table")
     queryDo(dbcon, sprintf("truncate table %s", tableName))
-    if(remove_quotes) {
+    if (remove_quotes) {
       query_string <- "copy %s from 's3://%s/%s.' region '%s' truncatecolumns acceptinvchars as '^' escape delimiter '|' removequotes gzip ignoreheader 1 emptyasnull STATUPDATE ON COMPUPDATE ON %s;"
     } else {
       query_string <- "copy %s from 's3://%s/%s.' region '%s' truncatecolumns acceptinvchars as '^' escape delimiter '|' gzip ignoreheader 1 emptyasnull STATUPDATE ON COMPUPDATE ON %s;"
     }
-    DBI::dbExecute(dbcon, sprintf(query_string,
-                           tableName,
-                           raw_bucket,
-                           prefix,
-                           region,
-                           make_creds()
+    DBI::dbExecute(dbcon, sprintf(
+      query_string,
+      tableName,
+      raw_bucket,
+      prefix,
+      region,
+      make_creds()
     ))
   }
 
-  if(use_transaction) {
-    transaction(.data = data,
-                .dbcon = dbcon,
-                list(function(...) { replace(data, dbcon) })
+  if (use_transaction) {
+    transaction(
+      .data = data,
+      .dbcon = dbcon,
+      list(function(...) {
+        replace(data, dbcon)
+      })
     )
   } else {
     replace(data, dbcon)

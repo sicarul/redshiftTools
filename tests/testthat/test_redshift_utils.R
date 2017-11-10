@@ -29,4 +29,3 @@ test_that("correctly handle time types", {
   )
   expect_true(suppressWarnings(all(identify_rs_types(dat) == c("DATE", "TIMESTAMP", "TIMESTAMP"))))
 })
-

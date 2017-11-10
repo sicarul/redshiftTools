@@ -187,11 +187,11 @@ sanitize_column_names_for_redshift <- function(.data) {
 
   column_names <- column_names_original
   column_name_is_reserved <- tolower(column_names) %in% tolower(REDSHIFT_RESERVED_WORDS)
-  column_names[column_name_is_reserved] <- paste0('rw_', column_names[column_name_is_reserved])
+  column_names[column_name_is_reserved] <- paste0("rw_", column_names[column_name_is_reserved])
   if (length(column_name_is_reserved) > 0) {
     message(glue("replacing column name '{column_names_original[column_name_is_reserved]}' with '{column_names[column_name_is_reserved]}' because the original is a reserved name in Redshift.  "))
   }
-  column_name_contains_period <- grepl(".", column_names, fixed=TRUE)
+  column_name_contains_period <- grepl(".", column_names, fixed = TRUE)
   column_names <- gsub(".", "_", column_names, fixed = TRUE)
   if (length(column_name_is_reserved) > 0) {
     message(glue("replacing column name '{column_names_original[column_name_contains_period]}' with '{column_names[column_name_contains_period]}' because periods perform poorly as column names in Redshift.  "))
@@ -209,8 +209,7 @@ sanitize_column_names_for_redshift <- function(.data) {
 #'
 #' @importFrom glue glue
 #' @importFrom dplyr coalesce recode
-identify_rs_types <- function (.data, character_length = NA_real_)
-{
+identify_rs_types <- function(.data, character_length = NA_real_) {
   classes <- lapply(.data, class)
   classes_first_pass <- lapply(classes, function(x) {
     if (all(c("POSIXct", "POSIXt") %in% x)) {
@@ -227,22 +226,24 @@ identify_rs_types <- function (.data, character_length = NA_real_)
     max_char_length <- .data %>%
       select(which(classes_first_pass == "character")) %>%
       map(~ max(nchar(.x, allowNA = TRUE, keepNA = FALSE), na.rm = TRUE)) %>%
-      unlist %>%
+      unlist() %>%
       max(. %||% 0, na.rm = TRUE)
     max_factor_length <- .data %>%
       select(which(classes_first_pass == "factor")) %>%
       map(~ max(nchar(levels(.x), allowNA = TRUE, keepNA = FALSE), na.rm = TRUE)) %>%
-      unlist %>%
+      unlist() %>%
       max(. %||% 0, na.rm = TRUE)
     varchar_length <- ceiling(max(c(max_char_length, max_factor_length), na.rm = TRUE) * 1.1) + 1
   }
-  if(varchar_length > 65535) {
+  if (varchar_length > 65535) {
     warning("Field required varchar longer than 65,535 (a Redshift maximum), setting varchar size to max.  Your data may be truncated.  In addition, this may cause issues, c.f. 'wide tables' http://docs.aws.amazon.com/redshift/latest/dg/r_CREATE_TABLE_usage.html")
     varchar_length <- 65535
   }
-  data_types <- recode(unlist(classes_first_pass), factor = as.character(glue("VARCHAR({varchar_length})")),
-                       numeric = "FLOAT8", integer = "INT", integer64 = "BIGINT", character = as.character(glue("VARCHAR({varchar_length})")),
-                       logical = "BOOLEAN", Date = "DATE")
+  data_types <- recode(
+    unlist(classes_first_pass), factor = as.character(glue("VARCHAR({varchar_length})")),
+    numeric = "FLOAT8", integer = "INT", integer64 = "BIGINT", character = as.character(glue("VARCHAR({varchar_length})")),
+    logical = "BOOLEAN", Date = "DATE"
+  )
   return(data_types)
 }
 globalVariables(".")
@@ -265,10 +266,11 @@ globalVariables(".")
 #' @importFrom magrittr %>%
 #' @importFrom dplyr select collect
 recent_errors <- function(con, n = 10) {
-  dbGetQuery(con, whisker.render("select colname, type, raw_field_value, err_reason, starttime from [stl_load_errors order by starttime desc limit {{limit}}",
-        list(
-          limit = n
-        )
+  dbGetQuery(con, whisker.render(
+    "select colname, type, raw_field_value, err_reason, starttime from [stl_load_errors order by starttime desc limit {{limit}}",
+    list(
+      limit = n
+    )
   )) %>%
     select(-starttime) %>%
     collect(n = Inf) %>%
@@ -325,7 +327,7 @@ rs_table_exists <- function(dbcon, table_name) {
   schema_is_external <- dbGetQuery(
     dbcon,
     whisker.render.recursive(select_exists, list(query = check_external_schema_exists, schemaname = schemaname))
-  )  %>%
+  ) %>%
     pull("present")
 
   check_method <- ifelse(schema_is_external, check_external_schema, check_internal_schema)
@@ -334,7 +336,7 @@ rs_table_exists <- function(dbcon, table_name) {
     dbGetQuery(
       dbcon,
       whisker.render.recursive(select_exists, list(query = check_method, schemaname = schemaname, tablename = tablename))
-    )  %>%
+    ) %>%
       pull(present)
   )
 }
@@ -353,24 +355,25 @@ rs_table_exists <- function(dbcon, table_name) {
 update_column_types <- function(data, dbcon, table_name) {
   table_name <- decompose_in_schema(table_name)
   stopifnot(rs_table_exists(dbcon, table_name))
-  tryCatch({
-    log_if_verbose("Starting transaction to update column types")
-    dbExecute(dbcon, "BEGIN")
-    log_if_verbose("Renaming original table")
-    dbExecute(dbcon, glue("ALTER TABLE {table_name} RENAME TO {table_name}_OLD"))
-    log_if_verbose("Creating empty table with new schema")
-    rs_create_table(.data = data, dbcon = dbcon, table_name = table_name)
-    log_if_verbose("Copying (and casting) data from old table to new table")
-    dbExecute(dbcon, glue("INSERT INTO {table_name} WITH CTE AS (
+  tryCatch(
+    {
+      log_if_verbose("Starting transaction to update column types")
+      dbExecute(dbcon, "BEGIN")
+      log_if_verbose("Renaming original table")
+      dbExecute(dbcon, glue("ALTER TABLE {table_name} RENAME TO {table_name}_OLD"))
+      log_if_verbose("Creating empty table with new schema")
+      rs_create_table(.data = data, dbcon = dbcon, table_name = table_name)
+      log_if_verbose("Copying (and casting) data from old table to new table")
+      dbExecute(dbcon, glue("INSERT INTO {table_name} WITH CTE AS (
       SELECT {paste0(paste0(redshiftTools:::sanitize_column_names_for_redshift(names(d)),'::',identify_rs_types(d)), collapse = ',')}
       FROM {table_name}_OLD
     )
     SELECT * FROM CTE"))
-    log_if_verbose("Copying (and casting) data from old table to new table")
-    dbExecute(dbcon, "END")
-  },
-  error = function(e) {
-    dbExecute(dbcon, "ROLLBACK")
-  })
+      log_if_verbose("Copying (and casting) data from old table to new table")
+      dbExecute(dbcon, "END")
+    },
+    error = function(e) {
+      dbExecute(dbcon, "ROLLBACK")
+    }
+  )
 }
-
