@@ -25,6 +25,6 @@ d=rep(as.POSIXct('2017-01-01 20:01:32'), n),
 e=rep(as.POSIXlt('2017-01-01 20:01:32'), n),
 f=rep(paste0(rep('a', 4000), collapse=''), n) )
 
-cat(getRedshiftCreateStatement(testdf, tablename='dm_great_table'))
+cat(rs_create_statement(testdf, tableName='dm_great_table'))
 
 }

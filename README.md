@@ -2,8 +2,6 @@
 redshiftTools
 =============
 
-[![Join the chat at https://gitter.im/redshiftTools/Lobby](https://badges.gitter.im/redshiftTools/Lobby.svg)](https://gitter.im/redshiftTools/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
-
 This is an R Package meant to easen the uploading of bulk data into Amazon Redshift.
 
 Installation
@@ -37,7 +35,7 @@ d=rep(as.POSIXct('2017-01-01 20:01:32'), n),
 e=rep(as.POSIXlt('2017-01-01 20:01:32'), n),
 f=rep(paste0(rep('a', 4000), collapse=''), n) )
 
-cat(getRedshiftCreateStatement(testdf, tablename='dm_great_table'))
+cat(rs_create_statement(testdf, tableName='dm_great_table'))
 ```
 
 This returns:
@@ -52,6 +50,8 @@ e timestamp,
 f VARCHAR(4096)
 );
 ```
+
+The cat is only done to view properly in console, it's not done directly in the function in case you need to pass the string to another function (Like a query runner)
 
 ### Uploading data
 
