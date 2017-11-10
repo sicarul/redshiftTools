@@ -30,7 +30,40 @@ To install this package, you'll need to execute these commands:
 
 ## Usage
 
-You'll have available now 2 functions: `rs_replace_table` and `rs_upsert_table`, both of these functions are called with almost the same parameters, except on upsert you can specify with which keys to search for matching rows.
+### Creating tables
+
+For creating tables, there is a support function, `rs_create_statement`, which receives a data.frame and returns the query for creating the same table in Amazon Redshift.
+
+``` r
+n=1000
+testdf = data.frame(
+a=rep('a', n),
+b=c(1:n),
+c=rep(as.Date('2017-01-01'), n),
+d=rep(as.POSIXct('2017-01-01 20:01:32'), n),
+e=rep(as.POSIXlt('2017-01-01 20:01:32'), n),
+f=rep(paste0(rep('a', 4000), collapse=''), n) )
+
+cat(getRedshiftCreateStatement(testdf, tablename='dm_great_table'))
+
+```
+
+This returns:
+
+``` sql
+CREATE TABLE dm_great_table (
+a VARCHAR(8),
+b int,
+c date,
+d timestamp,
+e timestamp,
+f VARCHAR(4096)
+);
+```
+
+### Uploading data
+
+For uploading data, you'll have available now 2 functions: `rs_replace_table` and `rs_upsert_table`, both of these functions are called with almost the same parameters, except on upsert you can specify with which keys to search for matching rows.
 
 For example, suppose we have a table to load with 2 integer columns, we could use the following code:
 
