@@ -41,7 +41,8 @@ rs_replace_table <- function(
   strict = TRUE,
   use_transaction = TRUE
 ) {
-
+  # just be sure we can make creds to save time if we can't
+  make_creds()
   if(missing(split_files)){
     split_files <- choose_number_of_splits(data, dbcon)
   }
