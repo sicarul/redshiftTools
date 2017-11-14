@@ -3,46 +3,50 @@ context("rs_upsert_table()")
 zapieR::make_db_connections()
 
 test_that("We can insert a row into an existing table", {
-  get_n <- function() {dbGetQuery(rs$con, "select count(*) as n from iris") %>% dplyr::pull(n)}
+  get_n <- function() {
+    dbGetQuery(rs$con, "select count(*) as n from iris") %>% dplyr::pull(n)
+  }
   original_n <- get_n()
-  rs_upsert_table(iris[1,], dbcon = rs$con, tableName = "iris", bucket = "zapier-data-science-storage")
+  rs_upsert_table(iris[1, ], dbcon = rs$con, tableName = "iris", bucket = "zapier-data-science-storage")
   expect_gte(get_n(), original_n + 1)
 })
 
 ## These tests are commented out because they are destructive
 DBI::dbGetQuery(conn = rs$con, statement = "drop table if exists mtcars_with_id;")
-mtcars_with_id <- cbind(id = 1 : nrow(mtcars), mtcars)
-rs_create_table(.data = mtcars_with_id,
-dbcon = rs$con, table_name = "mtcars_with_id")
+mtcars_with_id <- cbind(id = 1:nrow(mtcars), mtcars)
+rs_create_table(
+  .data = mtcars_with_id,
+  dbcon = rs$con, table_name = "mtcars_with_id"
+)
 #
 # test_that(
 # "When the table exists but is empty, rs_upsert_table works", {
-    # uploaded_mtcars <- function() { DBI::dbGetQuery(rs$con, "select * from mtcars_with_id")}
-    # expect_equal(0, nrow(uploaded_mtcars()))
-    # suppressMessages({
-    #     rs_upsert_table(mtcars_with_id, rs$con, "mtcars_with_id", keys = "id", use_transaction = FALSE, bucket = "zapier-data-science-storage")}
-    # )
-    # suppressMessages({
-    #     rs_upsert_table(mtcars_with_id, rs$con, "mtcars_with_id", keys = "id", bucket = "zapier-data-science-storage")}
-    # )
-    # suppressMessages({
-    #     # since this is upsert and we're giving a key, this operation should not
-    #     # duplicate rows.
-    #     transaction(.data = mtcars_with_id,
-    #     .dbcon = rs$con,
-    #     .function_sequence = list(function(...) { rs_upsert_table(tableName = "mtcars_with_id", keys = "id" , bucket = "zapier-data-science-storage", ...)})
-    #     )
-    # })
-    # expect_equal(dim(uploaded_mtcars()), dim(mtcars_with_id))
-    # DBI::dbGetQuery(rs$con, "delete from mtcars_with_id where mpg > 20")
-    # expect_equal(dim(uploaded_mtcars()), dim(mtcars_with_id[! mtcars_with_id$mpg > 20,]))
-    # expect_true(suppressMessages({
-    #     rs_upsert_table(mtcars_with_id, rs$con, "mtcars_with_id", key = "id")
-    # }))
-    # expect_null(suppressMessages({
-    #     rs_upsert_table(mtcars_with_id, rs$con, "mtcars_with_id", key = "id", use_transaction = FALSE)
-    # }))
-    # expect_equal(dim(uploaded_mtcars()), dim(mtcars_with_id))
+# uploaded_mtcars <- function() { DBI::dbGetQuery(rs$con, "select * from mtcars_with_id")}
+# expect_equal(0, nrow(uploaded_mtcars()))
+# suppressMessages({
+#     rs_upsert_table(mtcars_with_id, rs$con, "mtcars_with_id", keys = "id", use_transaction = FALSE, bucket = "zapier-data-science-storage")}
+# )
+# suppressMessages({
+#     rs_upsert_table(mtcars_with_id, rs$con, "mtcars_with_id", keys = "id", bucket = "zapier-data-science-storage")}
+# )
+# suppressMessages({
+#     # since this is upsert and we're giving a key, this operation should not
+#     # duplicate rows.
+#     transaction(.data = mtcars_with_id,
+#     .dbcon = rs$con,
+#     .function_sequence = list(function(...) { rs_upsert_table(tableName = "mtcars_with_id", keys = "id" , bucket = "zapier-data-science-storage", ...)})
+#     )
+# })
+# expect_equal(dim(uploaded_mtcars()), dim(mtcars_with_id))
+# DBI::dbGetQuery(rs$con, "delete from mtcars_with_id where mpg > 20")
+# expect_equal(dim(uploaded_mtcars()), dim(mtcars_with_id[! mtcars_with_id$mpg > 20,]))
+# expect_true(suppressMessages({
+#     rs_upsert_table(mtcars_with_id, rs$con, "mtcars_with_id", key = "id")
+# }))
+# expect_null(suppressMessages({
+#     rs_upsert_table(mtcars_with_id, rs$con, "mtcars_with_id", key = "id", use_transaction = FALSE)
+# }))
+# expect_equal(dim(uploaded_mtcars()), dim(mtcars_with_id))
 # }
 # )
 # DBI::dbGetQuery(conn = rs$con, statement = "drop table if exists mtcars_with_id;")

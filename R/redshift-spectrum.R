@@ -1,8 +1,8 @@
 table_parts <- function(table_name) {
-  return(strsplit(table_name, '.', fixed = TRUE)[[1]])
+  return(strsplit(table_name, ".", fixed = TRUE)[[1]])
 }
 
-globalVariables(c("V1","values")) #suppresses check note due to NSE
+globalVariables(c("V1", "values")) # suppresses check note due to NSE
 #' List Spectrum partitions
 #'
 #' Provides character vector of partition names for a given table
@@ -22,10 +22,10 @@ spectrum_list_partitions <- function(dbcon, table_name) {
   this_table_parts <- table_parts(table_name)
   dbGetQuery(dbcon, glue("select values from SVV_EXTERNAL_PARTITIONS where schemaname = '{this_table_parts[1]}' and tablename = '{this_table_parts[2]}'")) %>%
     pull(values) %>%
-    textConnection %>%
-    jsonlite::stream_in(verbose = FALSE) %>% #the factor = 'string' arg didn't seem to work
+    textConnection() %>%
+    jsonlite::stream_in(verbose = FALSE) %>% # the factor = 'string' arg didn't seem to work
     pull(V1) %>%
-    unfactor
+    unfactor()
 }
 
 #' Remove a partition from Redshift Spectrum
@@ -110,13 +110,12 @@ create_external_table <- function(dbcon, d, table_name, location, partitioned_by
       stop("The DATE data type is only valid for partitioning columns, include it in your partition or recast to timestamp")
     }
     partitioned_by_spec <- ""
-
   } else {
     # The 'date' type is only valid for partitioning columns.
     if ("DATE" %in% redshift_types[-partitioned_by_index]) {
       stop("The DATE data type is only valid for partitioning columns, include it in your partition or recast to timestamp")
     }
-    partitioned_by_spec <- paste0("PARTITIONED BY (",paste0(paste0(redshift_colnames[partitioned_by_index], " ", redshift_types[partitioned_by_index]), collapse = ","),")", collapse = "")
+    partitioned_by_spec <- paste0("PARTITIONED BY (", paste0(paste0(redshift_colnames[partitioned_by_index], " ", redshift_types[partitioned_by_index]), collapse = ","), ")", collapse = "")
     redshift_colnames <- redshift_colnames[-partitioned_by_index]
     redshift_types <- redshift_types[-partitioned_by_index]
   }

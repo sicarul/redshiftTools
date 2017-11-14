@@ -25,7 +25,7 @@
 #' n$b=n$a
 #' nx=rbind(n, data.frame(a=seq(99999:104000), b=seq(104000:99999)))
 #'
-#'\dontrun{
+#' \dontrun{
 #' con <- dbConnect(RPostgres::Postgres(), dbname="dbname",
 #' host='my-redshift-url.amazon.com', port='5439',
 #' user='myuser', password='mypassword',sslmode='require')
@@ -33,26 +33,25 @@
 #' rs_upsert_table(data=nx, dbcon=con, tableName='testTable',
 #' bucket="my-bucket", split_files=4, keys=c('a'))
 #'
-#'}
+#' }
 #' @export
-rs_upsert_table = function(
-  data,
-  dbcon,
-  tableName,
-  keys = NULL,
-  split_files,
-  bucket=Sys.getenv('AWS_BUCKET_NAME'),
-  region=Sys.getenv('AWS_DEFAULT_REGION'),
-  access_key=NULL,
-  secret_key=NULL,
-  strict = FALSE,
-  use_transaction = TRUE
-) {
-  if(missing(bucket)) {
+rs_upsert_table <- function(
+                            data,
+                            dbcon,
+                            tableName,
+                            keys = NULL,
+                            split_files,
+                            bucket=Sys.getenv("AWS_BUCKET_NAME"),
+                            region=Sys.getenv("AWS_DEFAULT_REGION"),
+                            access_key=NULL,
+                            secret_key=NULL,
+                            strict = FALSE,
+                            use_transaction = TRUE) {
+  if (missing(bucket)) {
     stop("Bucket name not specified")
   }
 
-  if(missing(split_files)){
+  if (missing(split_files)) {
     split_files <- choose_number_of_splits(data, dbcon)
   }
   # we make the creds as a test before we enter transaction land.
@@ -61,59 +60,67 @@ rs_upsert_table = function(
   # this functon is only intended in the processs of control flow
   # the occurs immediately after. This function does pretty much
   # all the work. it's not a pure function!
-  upsert <- function(data, dbcon, keys) {tryCatch({
-    raw_bucket <- paste0(bucket, if (Sys.getenv('ENVIRONMENT') == 'production') "" else "-test")
-    split_files <- min(split_files, nrow(data))
+  upsert <- function(data, dbcon, keys) {
+    tryCatch(
+      {
+        raw_bucket <- paste0(bucket, if (Sys.getenv("ENVIRONMENT") == "production") "" else "-test")
+        split_files <- min(split_files, nrow(data))
 
-    data <- fix_column_order(data, dbcon, table_name = tableName, strict = strict)
-    prefix <- uploadToS3(data, bucket, split_files)
-    on.exit({
-      message("Deleting temporary files from S3 bucket")
-      deletePrefix(prefix, raw_bucket, split_files)
-    })
-    stageTable <- paste0(sample(letters, 32, replace=TRUE), collapse = "")
+        data <- fix_column_order(data, dbcon, table_name = tableName, strict = strict)
+        prefix <- uploadToS3(data, bucket, split_files)
+        on.exit({
+          message("Deleting temporary files from S3 bucket")
+          deletePrefix(prefix, raw_bucket, split_files)
+        })
+        stageTable <- paste0(sample(letters, 32, replace = TRUE), collapse = "")
 
-    DBI::dbExecute(dbcon, sprintf("create temp table %s (like %s)", stageTable, tableName))
+        DBI::dbExecute(dbcon, sprintf("create temp table %s (like %s)", stageTable, tableName))
 
-    message("Copying data from S3 into Redshift")
-    DBI::dbExecute(dbcon, sprintf("copy %s from 's3://%s/%s.' region '%s' truncatecolumns acceptinvchars as '^' escape delimiter '|' removequotes gzip ignoreheader 1 emptyasnull STATUPDATE ON COMPUPDATE ON %s;",
-                                  stageTable,
-                                  raw_bucket,
-                                  prefix,
-                                  region,
-                                  make_creds()
-    ))
+        message("Copying data from S3 into Redshift")
+        DBI::dbExecute(dbcon, sprintf(
+          "copy %s from 's3://%s/%s.' region '%s' truncatecolumns acceptinvchars as '^' escape delimiter '|' removequotes gzip ignoreheader 1 emptyasnull STATUPDATE ON COMPUPDATE ON %s;",
+          stageTable,
+          raw_bucket,
+          prefix,
+          region,
+          make_creds()
+        ))
 
-    if(!is.null(keys)) {
-      message("Deleting rows with same keys")
-      keysCond <- paste(stageTable,".", keys, "=", tableName, ".", keys, sep="")
-      keysWhere <- sub(" and $", "", paste0(keysCond, collapse="", sep=" and "))
-      DBI::dbExecute(dbcon, sprintf('delete from %s using %s where %s;',
-                                    tableName,
-                                    stageTable,
-                                    keysWhere
-      ))
-    }
+        if (!is.null(keys)) {
+          message("Deleting rows with same keys")
+          keysCond <- paste(stageTable, ".", keys, "=", tableName, ".", keys, sep = "")
+          keysWhere <- sub(" and $", "", paste0(keysCond, collapse = "", sep = " and "))
+          DBI::dbExecute(dbcon, sprintf(
+            "delete from %s using %s where %s;",
+            tableName,
+            stageTable,
+            keysWhere
+          ))
+        }
 
-    message("Insert new rows")
-    DBI::dbExecute(dbcon, sprintf('insert into %s (select * from %s);', tableName, stageTable))
-    DBI::dbExecute(dbcon, sprintf("drop table %s;", stageTable))
-  },
-  error = function(e) {
-    warning(paste0("Error detected, bubling up", e))
-    if (exists("stageTable")) {
-      message("Outputing schemas to compare...")
-      compare_schema_d_to_db(data, stageTable)
-    }
-    stop(e)
+        message("Insert new rows")
+        DBI::dbExecute(dbcon, sprintf("insert into %s (select * from %s);", tableName, stageTable))
+        DBI::dbExecute(dbcon, sprintf("drop table %s;", stageTable))
+      },
+      error = function(e) {
+        warning(paste0("Error detected, bubling up", e))
+        if (exists("stageTable")) {
+          message("Outputing schemas to compare...")
+          compare_schema_d_to_db(data, stageTable)
+        }
+        stop(e)
+      }
+    )
   }
-  )}
 
 
-  if(use_transaction) {
-    transaction(.data = data,
-                .dbcon = dbcon,
-                list(function(...) { upsert(data, dbcon, keys) })
+  if (use_transaction) {
+    transaction(
+      .data = data,
+      .dbcon = dbcon,
+      list(function(...) {
+        upsert(data, dbcon, keys)
+      })
     )
   } else {
     upsert(data, dbcon, keys)
