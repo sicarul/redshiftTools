@@ -1,6 +1,6 @@
 log_if_verbose <- function(...) {
   if (isTRUE(getOption("redshiftTools.verbose"))) {
-    message(...)
+    message("redshiftTools: ", ...)
   }
 }
 
