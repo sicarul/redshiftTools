@@ -377,3 +377,31 @@ update_column_types <- function(data, dbcon, table_name) {
     }
   )
 }
+
+#' Get Table Attributes String
+#'
+#' @param diststyle Distribution style defaults to "even"
+#' @param distkey character. optional. Distribution key
+#' @param compound_sort character. optional. Compound sort keys
+#' @param interleaved_sort character. optional. Interleaved sort keys
+#'
+#' @return character
+#' @export
+table_attributes <- function(diststyle = c("even", "all", "key"), distkey = NULL, compound_sort = NULL, interleaved_sort = NULL) {
+	diststyle <- match.arg(diststyle)
+  diststyle <- glue("DISTSTYLE {diststyle}")
+	if(!is.null(compound_sort) & !is.null(interleaved_sort)) {
+		stop("only one sort type can be selected")
+	}
+	if (!is.null(distkey)) {
+		distkey <- glue("DISTKEY ({distkey})")
+	}
+	if (!is.null(compound_sort)) {
+		sortkey <- glue("COMPOUND SORTKEY ({compound_sort})")
+	}
+	if (!is.null(interleaved_sort)) {
+		sortkey <- glue("INTERLEAVED SORTKEY ({interleaved_sort})")
+	}
+	return(glue("{diststyle} {distkey} {sortkey}"))
+}
+
