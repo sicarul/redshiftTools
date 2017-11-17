@@ -23,9 +23,12 @@ colToRedshiftType <- function(col) {
            return('float8')
          },
          integer = {
-           if(max(col) < 2000000000){ # Max int is 2147483647 in Redshift
+           if(all(is.na(col))){ #Unknown column, all null
              return('int')
-           } else if (max(col) < 9200000000000000000){ #Max bigint is 9223372036854775807 in redshift, if bigger treat as numeric
+           }
+           if(max(col, na.rm = T) < 2000000000){ # Max int is 2147483647 in Redshift
+             return('int')
+           } else if (max(col, na.rm=T) < 9200000000000000000){ #Max bigint is 9223372036854775807 in redshift, if bigger treat as numeric
              return('bigint')
            } else{
              return('numeric(38,0)')
