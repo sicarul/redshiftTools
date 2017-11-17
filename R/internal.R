@@ -97,7 +97,8 @@ uploadToS3 <- function(data, bucket, split_files) {
     part <- as.data.frame(lapply(part, function(y) gsub("'", "", y)))
     part <- as.data.frame(lapply(part, function(y) gsub("\\\\", "", y)))
     part <- as.data.frame(lapply(part, function(y) gsub("\\|", "\\\\|", y)))
-    part <- as.data.frame(lapply(part, function(y) gsub("\\n", "", y)))
+    part <- as.data.frame(lapply(part, function(y) gsub("\r\n", "\r", y)))
+    part <- as.data.frame(lapply(part, function(y) gsub("\n", "\r", y)))
     data.table::fwrite(
       part, tmpFile, sep = "|", na = "", col.names = T,
       # ending a line with the delimiter is required, otherwise stl_load_errors
