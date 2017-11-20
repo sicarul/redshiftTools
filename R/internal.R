@@ -42,3 +42,8 @@ deletePrefix = function(prefix, bucket, split_files){
 queryDo = function(dbcon, query){
   dbGetQuery(dbcon, query)
 }
+
+#' @importFrom DBI dbExecute
+queryStmt = function(dbcon, query){
+  dbExecute(dbcon, query)
+}

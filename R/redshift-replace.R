@@ -60,7 +60,7 @@ rs_replace_table = function(
   result = tryCatch({
       stageTable=paste0(sample(letters,16),collapse = "")
 
-      queryDo(dbcon, sprintf("create temp table %s (like %s)", stageTable, tableName))
+      queryStmt(dbcon, sprintf("create temp table %s (like %s)", stageTable, tableName))
 
       print("Copying data from S3 into Redshift")
       copyStr = "copy %s from 's3://%s/%s.' region '%s' csv gzip ignoreheader 1 emptyasnull COMPUPDATE FALSE"
@@ -70,27 +70,27 @@ rs_replace_table = function(
         copyStr = paste(copyStr, sprintf("credentials 'aws_access_key_id=%s;aws_secret_access_key=%s'", access_key, secret_key), sep=" ")
       }
       statement = sprintf(copyStr, stageTable, bucket, prefix, region)
-      queryDo(dbcon, statement)
+      queryStmt(dbcon, statement)
 
 
       print("Deleting target table for replacement")
-      queryDo(dbcon, sprintf("delete from %s", tableName))
+      queryStmt(dbcon, sprintf("delete from %s", tableName))
 
       print("Insert new rows")
-      queryDo(dbcon, sprintf('insert into %s select * from %s', tableName, stageTable))
+      queryStmt(dbcon, sprintf('insert into %s select * from %s', tableName, stageTable))
 
       print("Drop staging table")
-      queryDo(dbcon, sprintf("drop table %s", stageTable))
+      queryStmt(dbcon, sprintf("drop table %s", stageTable))
 
       print("Committing changes")
-      queryDo(dbcon, "COMMIT;")
+      queryStmt(dbcon, "COMMIT;")
 
       return(TRUE)
   }, warning = function(w) {
       print(w)
   }, error = function(e) {
       print(e$message)
-      queryDo(dbcon, 'ROLLBACK;')
+      queryStmt(dbcon, 'ROLLBACK;')
       return(FALSE)
   }, finally = {
     print("Deleting temporary files from S3 bucket")
