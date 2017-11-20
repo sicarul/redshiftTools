@@ -1,7 +1,7 @@
 #' @importFrom "utils" "head"
 calculateCharSize <- function(col){
   col=as.character(col)
-  maxChar = max(nchar(col))
+  maxChar = max(nchar(col), na.rm=T)
   sizes = 2^c(3:16) # From 8 to 65536, max varchar size in redshift
   fsizes = sizes[ifelse(sizes>maxChar, T, F)]
   if(length(fsizes)==0){
