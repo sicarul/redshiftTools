@@ -4,10 +4,10 @@
 \alias{view_definition}
 \title{Show definition for a view}
 \usage{
-view_definition(con, view_name)
+view_definition(dbcon, view_name)
 }
 \arguments{
-\item{con}{A database connection object}
+\item{dbcon}{A database connection object}
 
 \item{view_name}{The view you'd like to describe}
 }

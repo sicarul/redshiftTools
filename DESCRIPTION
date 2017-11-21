@@ -1,27 +1,35 @@
 Package: redshiftTools
 Type: Package
 Title: Redshift Tools
-Version: 0.1.1
-Authors@R: person("Pablo", "Seibelt", email = "pabloseibelt@sicarul.com",
-  role = c("aut", "cre"))
+Version: 0.1.2
+Authors@R: c(person("Pablo", "Seibelt", email = "pabloseibelt@sicarul.com",
+  role = c("aut", "cre")),person("Russell S.", "Pierce", role = c("ctb"), email = "russell.pierce@zapier.com"))
 Mantainers@R: person("Pablo", "Seibelt", email = "pabloseibelt@sicarul.com",
     role = c("aut", "cre"))
 Depends:
-    R (>= 3.1.2),
-    zapieR
+    R (>= 3.1.2)
 Imports:
-    DBI,
-    RPostgres,
-    aws.s3,
-    parallel,
     assertthat,
+    aws.s3,
+    data.table,
+    DBI,
     dplyr,
+    dbplyr,
+    glue,
+    jsonlite,
+    knitr,
     magrittr,
+    memoise,
+    parallel,
     purrr,
+    reticulate,
+    rlang,
     stringr,
-    whisker
+    whisker,
+    zapieR
 Description: Tools to upload data to an Amazon Redshift Database with good performance.
 License: MIT + file LICENSE
 LazyData: TRUE
-RoxygenNote: 6.0.1
-Suggests: testthat
+RoxygenNote: 6.0.1.9000
+Suggests: testthat,
+    lubridate

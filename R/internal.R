@@ -1,69 +1,91 @@
+log_if_verbose <- function(...) {
+  if (isTRUE(getOption("redshiftTools.verbose"))) {
+    message("redshiftTools: ", ...)
+  }
+}
+
+stopifnoschema <- function(table_name) {
+  assertthat::assert_that("ident" %in% class(table_name), msg = "Table name must be result of dbplyr::in_schema()")
+}
+
+warnifnoschema <- function(table_name) {
+  if (!"ident" %in% class(table_name)) {
+    warning(glue("No schema specified for {table_name}, will default to using public"))
+    return(FALSE)
+  } else {
+    return(TRUE)
+  }
+}
+
+#' Simple coalece
+#'
+#' A simple non-type aware coalece
+#'
+#' @aliases coalesceifnull %||%
+#' @params x left position
+#' @params y right position
+coalesceifnull <- function(x, y) {
+  return(x %||% y)
+}
+`%||%` <- function(x, y) if (is.null(x) || is.na(x) || length(x) == 0) y else x
+
+
 #' @importFrom reticulate import
 boto <- reticulate::import("boto", delay_load = TRUE)
-
-#' Translate the types of a given data.frame to Redshift types
-#'
-#' @param .data data.frame, tbl_df
-#'
-#' @return character
-#' @importFrom dplyr recode
-#'
-#' @examples
-#' \dontrun{redshiftTools:::identify_rs_types(mtcars)}
-#'
-identify_rs_types <- function(.data) {
-  classes <- lapply(.data, class)
-  classes_first_pass <- lapply(classes, function(x) {
-    if (all(c("POSIXct", "POSIXt") %in% x)) {
-      x <- "TIMESTAMP"
-    }
-    return(x)
-  })
-  if (any("factor" %in% classes_first_pass)) {
-    warning("one of the columns is a factor")
-  }
-  data_types <- recode(
-    unlist(classes_first_pass),
-    factor = "VARCHAR(255)",
-    numeric = "FLOAT8",
-    integer = "BIGINT",
-    character = "VARCHAR(255)",
-    logical = "BOOLEAN")
-  return(data_types)
-}
 
 bucket_exists <- function(bucket) {
   !is.null(boto$connect_s3()$lookup(bucket))
 }
 
-# Internal utility functions used by the redshift tools
+#' Compare data.frame schema (as detected) to db schema
+#'
+#' @param dbcon A database connection object
+#' @param data data.frame
+#' @param table character table name
+#'
+#' @return Side effect of printing result
+#' @export
+#'
+#' @importFrom glue glue
+#' @importFrom dplyr left_join
+#' @importFrom magrittr %>%
+#' @importFrom knitr kable
+compare_schema_d_to_db <- function(dbcon, data, table) {
+  print(kable(DBI::dbGetQuery(dbcon, glue("select \"column\", type as type_on_db from PG_TABLE_DEF where tablename = '{table_name}'")) %>%
+    left_join(data.frame(column = names(data), detected_type = identify_rs_types(data)), by = "column")))
+}
 
+# Internal utility functions used by the redshift tools
+#'
+#' uploadToS3 handles the -test thing on its own since it uses the zapieR methods
+#' @param data data.frame
+#' @param bucket character
+#' @param split_files Number of files to split the data.frame into when uploading to S3
+#'
 #' @importFrom aws.s3 put_object
-#' @importFrom aws.signature locate_credentials
 #' @importFrom utils write.csv
 #' @importFrom zapieR data_science_storage_s3 data_monolith_etl_s3 data_monolith_staging_s3
-#' uploadToS3 handles the -test thing on its own since it uses the zapieR methods
-uploadToS3 <- function(data, bucket, split_files) {
+#' @importFrom data.table fwrite
 
-  prefix = paste0(sample(letters, 32, replace = TRUE), collapse = "")
+uploadToS3 <- function(data, bucket, split_files) {
+  prefix <- paste0(sample(letters, 32, replace = TRUE), collapse = "")
 
   # this use of locate_credentials works on a IAM Role provisioned box, it is unclear how it would work in other environments
-  if(!bucket_exists(bucket)) {
+  if (!bucket_exists(bucket)) {
     stop("Bucket does not exist")
   }
 
-  if(nrow(data) == 0) {
+  if (nrow(data) == 0) {
     stop("Input data is empty")
   }
 
-  if(nrow(data) < split_files) {
+  if (nrow(data) < split_files) {
     split_files <- nrow(data)
   }
 
   splitted <- suppressWarnings(split(data, seq(1:split_files)))
-  #shared state in boto means that this can't go parallel at this time, small files choke it
+  # shared state in boto means that this can't go parallel at this time, small files choke it
   lapply(1:split_files, function(i) {
-
     part <- data.frame(splitted[i])
 
     tmpFile <- tempfile()
@@ -75,20 +97,23 @@ uploadToS3 <- function(data, bucket, split_files) {
     part <- as.data.frame(lapply(part, function(y) gsub("'", "", y)))
     part <- as.data.frame(lapply(part, function(y) gsub("\\\\", "", y)))
     part <- as.data.frame(lapply(part, function(y) gsub("\\|", "\\\\|", y)))
-    part <- as.data.frame(lapply(part, function(y) gsub('\\n', "", y)))
-    data.table::fwrite(part, tmpFile, sep = "|", na = "", col.names = T,
-                       # ending a line with the delimiter is required, otherwise stl_load_errors
-                       # will return: Delimiter not found
-                       eol = "|\n")
+    part <- as.data.frame(lapply(part, function(y) gsub("\r\n", "\r", y)))
+    part <- as.data.frame(lapply(part, function(y) gsub("\n", "\r", y)))
+    data.table::fwrite(
+      part, tmpFile, sep = "|", na = "", col.names = T,
+      # ending a line with the delimiter is required, otherwise stl_load_errors
+      # will return: Delimiter not found
+      eol = "|\n"
+    )
 
     system(paste("gzip -f", tmpFile))
 
     message(paste("Uploading", s3Name))
     s3 <- switch(bucket,
-           `zapier-data-science-storage` = data_science_storage_s3(),
-           `data-monolith-etl` = data_monolith_etl_s3(),
-           `data-monolith-staging` = data_monolith_staging_s3(),
-          data_science_storage_s3()
+      `zapier-data-science-storage` = data_science_storage_s3(),
+      `data-monolith-etl` = data_monolith_etl_s3(),
+      `data-monolith-staging` = data_monolith_staging_s3(),
+      data_science_storage_s3()
     )
     s3$set_file(object = s3Name, file = paste0(tmpFile, ".gz"))
   })
@@ -99,14 +124,14 @@ uploadToS3 <- function(data, bucket, split_files) {
 #' @importFrom "aws.s3" "delete_object"
 #' @importFrom parallel mclapply
 deletePrefix <- function(prefix, bucket, split_files) {
-  file_names <- paste(prefix, ".", formatC(1:split_files, width = 4, format = "d", flag = "0"), ".psv.gz", sep="")
+  file_names <- paste(prefix, ".", formatC(1:split_files, width = 4, format = "d", flag = "0"), ".psv.gz", sep = "")
   s3_bucket <- boto$connect_s3()$get_bucket(bucket)
   s3_bucket$delete_keys(sapply(file_names, s3_bucket$get_key))
-  NULL #error message otherwise is TypeError: 'MultiDeleteResult' object is not iterable
+  NULL # error message otherwise is TypeError: 'MultiDeleteResult' object is not iterable
 }
 
 #' @importFrom DBI dbGetQuery
-queryDo <- function(dbcon, query){
+queryDo <- function(dbcon, query) {
   dbGetQuery(dbcon, query)
 }
 
@@ -117,7 +142,7 @@ get_table_schema <- function(dbcon, table) {
   assertthat::assert_that(length(table) <= 2)
   assertthat::assert_that("character" %in% class(table))
   if (is.atomic(table)) {
-    schema <- 'public'
+    schema <- "public"
     target_table <- table
   } else {
     schema <- table[1]
@@ -129,19 +154,33 @@ get_table_schema <- function(dbcon, table) {
   AND schemaname = '{{schema}}'", list(table_name = target_table, schema = schema)))
 }
 
+#' Fix the order of columns in d to match the underlying Redshift table
+#'
+#' Internal function for redshiftTools
+#'
+#' @param d data frame
+#' @param dbcon db connection
+#' @param table_name character element
+#' @param strict boolean
+#'
 #' @importFrom whisker whisker.render
 #' @importFrom DBI dbGetQuery
-#' @importFrom dplyr select_
+#' @importFrom dplyr select_ mutate_
 #' @importFrom magrittr %>%
+#' @importFrom stats setNames
 fix_column_order <- function(d, dbcon, table_name, strict = TRUE) {
-  if (!DBI::dbExistsTable(dbcon, table_name)) {
+  if (!"tbl_sql" %in% class(try(dbcon %>% dplyr::tbl(table_name)))) {
     stop(table_name, " does not exist")
   }
   column_names <- get_table_schema(dbcon, table_name)$column
-  # we want to ignore the rw_ prefix we add, because we add that dynamically at time of
-  column_names <- gsub("rw_", "", column_names, fixed = TRUE)
-  #redshift doesn't respect case
-  names(d) <- tolower(names(d))
+
+  # catch unsanitized names in redshift...doesn't hurt to sanitize if already sanitized
+  column_names <- sanitize_column_names_for_redshift(tolower(column_names))
+
+  # redshift doesn't respect case, but needs some hand holding
+  # now we can compare sanitized to sanitized
+  names(d) <- sanitize_column_names_for_redshift(tolower(names(d)))
+
   if (!strict) {
     # add columns to redshift db
     for (missing_column in names(d)[!(names(d) %in% column_names)]) {
@@ -149,7 +188,7 @@ fix_column_order <- function(d, dbcon, table_name, strict = TRUE) {
       rs_add_column(dbcon, table_name = table_name, column_name = missing_column, redshift_type = rs_type)
       column_names <- get_table_schema(dbcon, table_name)$column
     }
-    #add columns to data
+    # add columns to data
     for (missing_column in column_names[!(column_names %in% names(d))]) {
       d <- d %>% mutate_(.dots = setNames(list("NA"), missing_column))
     }
@@ -162,172 +201,46 @@ fix_column_order <- function(d, dbcon, table_name, strict = TRUE) {
   d %>% select_(.dots = paste0("`", column_names, "`"))
 }
 
-RESERVED_WORDS <- readLines(textConnection("AES128
-AES256
-ALL
-ALLOWOVERWRITE
-ANALYSE
-ANALYZE
-AND
-ANY
-ARRAY
-AS
-ASC
-AUTHORIZATION
-BACKUP
-BETWEEN
-BINARY
-BLANKSASNULL
-BOTH
-BYTEDICT
-BZIP2
-CASE
-CAST
-CHECK
-COLLATE
-COLUMN
-CONSTRAINT
-CREATE
-CREDENTIALS
-CROSS
-CURRENT_DATE
-CURRENT_TIME
-CURRENT_TIMESTAMP
-CURRENT_USER
-CURRENT_USER_ID
-DEFAULT
-DEFERRABLE
-DEFLATE
-DEFRAG
-DELTA
-DELTA32K
-DESC
-DISABLE
-DISTINCT
-DO
-ELSE
-EMPTYASNULL
-ENABLE
-ENCODE
-ENCRYPT
-ENCRYPTION
-END
-EXCEPT
-EXPLICIT
-FALSE
-FOR
-FOREIGN
-FREEZE
-FROM
-FULL
-GLOBALDICT256
-GLOBALDICT64K
-GRANT
-GROUP
-GZIP
-HAVING
-IDENTITY
-IGNORE
-ILIKE
-IN
-INITIALLY
-INNER
-INTERSECT
-INTO
-IS
-ISNULL
-JOIN
-LEADING
-LEFT
-LIKE
-LIMIT
-LOCALTIME
-LOCALTIMESTAMP
-LUN
-LUNS
-LZO
-LZOP
-MINUS
-MOSTLY13
-MOSTLY32
-MOSTLY8
-NATURAL
-NEW
-NOT
-NOTNULL
-NULL
-NULLS
-OFF
-OFFLINE
-OFFSET
-OID
-OLD
-ON
-ONLY
-OPEN
-OR
-ORDER
-OUTER
-OVERLAPS
-PARALLEL
-PARTITION
-PERCENT
-PERMISSIONS
-PLACING
-PRIMARY
-RAW
-READRATIO
-RECOVER
-REFERENCES
-RESPECT
-REJECTLOG
-RESORT
-RESTORE
-RIGHT
-SELECT
-SESSION_USER
-SIMILAR
-SOME
-SYSDATE
-SYSTEM
-TABLE
-TAG
-TDES
-TEXT255
-TEXT32K
-THEN
-TIMESTAMP
-TO
-TOP
-TRAILING
-TRUE
-TRUNCATECOLUMNS
-UNION
-UNIQUE
-USER
-USING
-VERBOSE
-WALLET
-WHEN
-WHERE
-WITH
-WITHOUT"))
+#' Find the number of slices on the cluster
+#'
+#' We use this as a hint for how many pieces we should slice our data into.
+#' We memoise this query for 1 hour because we may end up doing it several times,
+#' and the result can't change quickly because Redshift resizes take quite some time.
+#'
+#' @importFrom memoise memoise timeout
+#' @params dbcon A database connection object
+number_of_slices <- memoise::memoise(function(dbcon) {
+  message("Getting number of slices from Redshift")
+  slices <- queryDo(dbcon, "select count(1) from stv_slices")
+  unlist(slices[1] * 4)
+}, ~timeout(60 * 60))
 
+#' Identify the number of files to generate given a dataset
+#'
+#' Per Redshift documentation we're aiming for between 1 MB and 1 GB (after compression).
+#' Since we know almost nothing about how much compression we'll get, we'll target 100 MB
+#' raw sizes with the expectation that we'll compress down to something north of 1 MB and
+#' with the fervent hope that we'll upload files in parallel again at some point.
+#'
+#' @param data data.frame
+#' @param dbcon the database connection
+#' @importFrom utils object.size
 choose_number_of_splits <- function(data, dbcon) {
-    message("Getting number of slices from Redshift")
-    slices <- queryDo(dbcon,"select count(*) from stv_slices")
-    split_files <- unlist(slices[1]*4)
-    # check for execessive fragmentation
-    rows_per_split <- nrow(data) / (slices[1] * 4)
-    if (rows_per_split < 1000) {
-      split_files <- slices[1]
-      # no need for more splits than there are rows
-      if (split_files > nrow(data)) {
-        split_files <- 1
-      }
-    }
-    # No need for more splits than files
-    message(sprintf("%s slices detected, will split into %s files", slices, split_files))
+  mb_target <- 100
+  slices <- number_of_slices(dbcon)
+  object_size_in_mb <- as.numeric(object.size(data) / 1024 / 1024)
+  # check for execessive fragmentation
+  if (object_size_in_mb <= slices) {
+    split_files <- 1
+  } else {
+    # If more than slices mb per slice, then open up a new round of slices
+    split_files <- (floor(object_size_in_mb / mb_target / slices) + 1) * slices
+  }
+  # Sanity check: No need for more splits than rows
+  if (nrow(data) < split_files) {
+    split_files <- 1
+  }
+  message(sprintf("%s slices detected, will split into %s files", slices, split_files))
   return(split_files)
 }
 
@@ -337,7 +250,7 @@ make_dot <- function(table, schema = NULL) {
     schema <- "public"
   }
   assertthat::is.scalar(schema)
-  paste0(schema,".",table)
+  paste0(schema, ".", table)
 }
 
 vec_to_dot <- function(x) {
@@ -352,7 +265,7 @@ vec_to_dot <- function(x) {
   make_dot(table, schema)
 }
 
-dot_to_vec  <- function(x) {
+dot_to_vec <- function(x) {
   strsplit(x, split = ".", fixed = TRUE)[[1]]
 }
 
@@ -372,21 +285,20 @@ dot_to_vec  <- function(x) {
 #'
 #' @importFrom glue glue
 make_creds <- function(
-  access_key = NULL,
-  secret_key = NULL
-) {
+                       access_key = NULL,
+                       secret_key = NULL) {
   gen_credentials <- function(access_key, secret_key) {
     return(glue("credentials 'aws_access_key_id={access_key};aws_secret_access_key={secret_key}'"))
   }
 
-  if (!missing(access_key) & !missing(secret_key)) {
+  if (!missing(access_key) && !missing(secret_key) && !is.null(access_key) && !is.null(secret_key)) {
     # Uses access_key and secret_key if provided
     return(gen_credentials(access_key, secret_key))
-  } else if (nchar(Sys.getenv('REDSHIFT_ROLE')) > 0) {
+  } else if (nchar(Sys.getenv("REDSHIFT_ROLE")) > 0) {
     # otherwise use REDSHIFT_ROLE env var if available,
     return(glue("IAM_ROLE '{Sys.getenv('REDSHIFT_ROLE')}'"))
-  } else if (nchar(Sys.getenv('AWS_ACCESS_KEY_ID')) > 0 && nchar(Sys.getenv('AWS_SECRET_ACCESS_KEY'))) {
-    return(gen_credentials(Sys.getenv('AWS_ACCESS_KEY_ID'), Sys.getenv('AWS_SECRET_ACCESS_KEY')))
+  } else if (nchar(Sys.getenv("AWS_ACCESS_KEY_ID")) > 0 && nchar(Sys.getenv("AWS_SECRET_ACCESS_KEY"))) {
+    return(gen_credentials(Sys.getenv("AWS_ACCESS_KEY_ID"), Sys.getenv("AWS_SECRET_ACCESS_KEY")))
   } else {
     stop("Unable to generate Redshift credentials; check for AWS_ACCESS_KEY and AWS_SECRET_ACCESS_KEY env vars or a REDSHIFT_ROLE env var")
   }
