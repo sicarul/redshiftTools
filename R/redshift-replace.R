@@ -58,7 +58,7 @@ rs_replace_table = function(
   prefix = uploadToS3(data, bucket, split_files)
 
   if(wlm_slots>1){
-    queryDo(dbcon,paste0("set wlm_query_slot_count to ", wlm_slots));
+    queryStmt(dbcon,paste0("set wlm_query_slot_count to ", wlm_slots));
   }
 
   result = tryCatch({
