@@ -4,12 +4,24 @@
 \alias{rs_create_statement}
 \title{Generate create table statement for Amazon Redshift}
 \usage{
-rs_create_statement(df, tableName = deparse(substitute(df)))
+rs_create_statement(df, table_name = deparse(substitute(df)), sortkeys,
+  sortkey_style = "compound", distkey, distkey_style = "even",
+  compression = T)
 }
 \arguments{
 \item{df}{the data.frame you want to upload to Amazon Redshift}
 
-\item{tableName}{the name of the table to create, if not specified it'll use the data.frame name}
+\item{table_name}{the name of the table to create, if not specified it'll use the data.frame name}
+
+\item{sortkeys}{Column or columns to sort the table by}
+
+\item{sortkey_style}{Sortkey style, can be compound or interleaved http://docs.aws.amazon.com/redshift/latest/dg/t_Sorting_data-compare-sort-styles.html}
+
+\item{distkey}{Distkey column, can only be one, if chosen the table is distributed among clusters according to a hash of this column's value.}
+
+\item{distkey_style}{Distkey style, can be even or all, for the key distribution use the distkey parameter. http://docs.aws.amazon.com/redshift/latest/dg/t_Distributing_data.html}
+
+\item{compression}{Add encoding for columns whose compression algorithm is easy to guess, for the rest you should upload it to Redshift and run ANALYZE COMPRESSION}
 }
 \description{
 This lets you easily generate a table schema from a data.frame, which allows for easily uploading to redshift afterwards.
@@ -25,6 +37,6 @@ d=rep(as.POSIXct('2017-01-01 20:01:32'), n),
 e=rep(as.POSIXlt('2017-01-01 20:01:32'), n),
 f=rep(paste0(rep('a', 4000), collapse=''), n) )
 
-cat(rs_create_statement(testdf, tableName='dm_great_table'))
+cat(rs_create_statement(testdf, table_name='dm_great_table'))
 
 }

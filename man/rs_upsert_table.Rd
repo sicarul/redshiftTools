@@ -9,7 +9,7 @@ rs_upsert_table(data, dbcon, tableName, keys, split_files,
   region = Sys.getenv("AWS_DEFAULT_REGION"),
   access_key = Sys.getenv("AWS_ACCESS_KEY_ID"),
   secret_key = Sys.getenv("AWS_SECRET_ACCESS_KEY"),
-  iam_role_arn = Sys.getenv("AWS_IAM_ROLE_ARN"))
+  iam_role_arn = Sys.getenv("AWS_IAM_ROLE_ARN"), wlm_slots = 1)
 }
 \arguments{
 \item{data}{a data frame}
@@ -31,6 +31,8 @@ rs_upsert_table(data, dbcon, tableName, keys, split_files,
 \item{secret_key}{the secret key with permissions fot the bucket. Will look for AWS_SECRET_ACCESS_KEY on environment if not specified.}
 
 \item{iam_role_arn}{an iam role arn with permissions fot the bucket. Will look for AWS_IAM_ROLE_ARN on environment if not specified. This is ignoring access_key and secret_key if set.}
+
+\item{wlm_slots}{amount of WLM slots to use for this bulk load http://docs.aws.amazon.com/redshift/latest/dg/tutorial-configuring-workload-management.html}
 }
 \description{
 Upload a table to S3 and then load it with redshift, replacing rows with the same

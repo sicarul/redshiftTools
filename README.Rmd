@@ -12,7 +12,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # redshiftTools
 
-This is an R Package meant to easen the uploading of bulk data into Amazon Redshift.
+This is an R Package meant to easen common operations with Amazon Redshift. The first motivation for this package was making it easier for bulk uploads, where the procedure for uploading data consists in generating various CSV files, uploading them to an S3 bucket and then calling a copy command on the server, this package helps with all those tasks in encapsulated functions.
 
 
 ## Installation
