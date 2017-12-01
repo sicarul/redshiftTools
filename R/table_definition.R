@@ -131,5 +131,5 @@ rs_create_statement <- function(
     }
   }
 
-  return(paste0('CREATE TABLE ', table_name, ' (\n', fields, '\n', dkey, skey,');'))
+  return(paste0('CREATE TABLE ', table_name, ' (\n', fields, '\n)', dkey, skey,';'))
 }
