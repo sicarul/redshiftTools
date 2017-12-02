@@ -12,6 +12,7 @@
 #' @param access_key the access key with permissions for the bucket. Will look for AWS_ACCESS_KEY_ID on environment if not specified.
 #' @param secret_key the secret key with permissions fot the bucket. Will look for AWS_SECRET_ACCESS_KEY on environment if not specified.
 #' @param iam_role_arn an iam role arn with permissions fot the bucket. Will look for AWS_IAM_ROLE_ARN on environment if not specified. This is ignoring access_key and secret_key if set.
+#' @param wlm_slots amount of WLM slots to use for this bulk load http://docs.aws.amazon.com/redshift/latest/dg/tutorial-configuring-workload-management.html
 #' @examples
 #' library(DBI)
 #'
@@ -36,7 +37,8 @@ rs_replace_table = function(
     region=Sys.getenv('AWS_DEFAULT_REGION'),
     access_key=Sys.getenv('AWS_ACCESS_KEY_ID'),
     secret_key=Sys.getenv('AWS_SECRET_ACCESS_KEY'),
-    iam_role_arn=Sys.getenv('AWS_IAM_ROLE_ARN')
+    iam_role_arn=Sys.getenv('AWS_IAM_ROLE_ARN'),
+    wlm_slots=1
     )
   {
 
@@ -55,7 +57,9 @@ rs_replace_table = function(
 
   prefix = uploadToS3(data, bucket, split_files)
 
-
+  if(wlm_slots>1){
+    queryStmt(dbcon,paste0("set wlm_query_slot_count to ", wlm_slots));
+  }
 
   result = tryCatch({
       stageTable=paste0(sample(letters,16),collapse = "")
