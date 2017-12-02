@@ -69,6 +69,8 @@ rs_upsert_table = function(
 
     print("Copying data from S3 into Redshift")
     copyStr = "copy %s from 's3://%s/%s.' region '%s' csv gzip ignoreheader 1 emptyasnull COMPUPDATE FALSE"
+
+    # Use iam role if available
     if ((nchar(iam_role_arn) > 0)) {
       copyStr = paste(copyStr, sprintf("iam_role '%s'", iam_role_arn), sep=" ")
     } else {
@@ -78,8 +80,11 @@ rs_upsert_table = function(
     queryStmt(dbcon,statement)
     if(!missing(keys)){
       print("Deleting rows with same keys")
+
+      # where stage.key = table.key and...
       keysCond = paste(stageTable,".",keys, "=", tableName,".",keys, sep="")
       keysWhere = sub(" and $", "", paste0(keysCond, collapse="", sep=" and "))
+
       queryStmt(dbcon, sprintf('delete from %s using %s where %s',
               tableName,
               stageTable,

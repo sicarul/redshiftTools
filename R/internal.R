@@ -20,7 +20,7 @@ uploadToS3 = function (data, bucket, split_files){
 
     tmpFile = tempfile()
     s3Name=paste(bucket, "/", prefix, ".", formatC(i, width = 4, format = "d", flag = "0"), sep="")
-    write.csv(part, gzfile(tmpFile), na='', row.names=F)
+    write.csv(part, gzfile(tmpFile, encoding="UTF-8"), na='', row.names=F)
 
     print(paste("Uploading", s3Name))
     put_object(file = tmpFile, object = s3Name, bucket = "")
