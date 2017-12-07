@@ -382,8 +382,8 @@ update_column_types <- function(data, dbcon, table_name) {
 #'
 #' @param diststyle Distribution style defaults to "even"
 #' @param distkey character. optional. Distribution key
-#' @param compound_sort character. optional. Compound sort keys
-#' @param interleaved_sort character. optional. Interleaved sort keys
+#' @param compound_sort character vector. optional. Compound sort keys
+#' @param interleaved_sort character vector. optional. Interleaved sort keys
 #'
 #' @return character
 #' @export
