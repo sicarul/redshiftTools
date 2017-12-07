@@ -492,3 +492,18 @@ order by query_execution_time desc, query, sequence
             usename = first(usename)) %>%
   mutate(query_text = query_text %>% gsub("\\n"," ", ., fixed = TRUE) %>% gsub("\\","", ., fixed = TRUE))
 }
+
+#' is_temp_table
+#'
+#' @param con Postgres Connection
+#' @param table_name Table Name
+#'
+#' @return boolean
+#' @export
+is_temp_table <- function(con, table_name) {
+  con <- rs_db()$con
+  tbl(con, sql("select * from svv_table_info where schema ~ 'pg_temp'")) %>%
+    filter(table == table_name) %>%
+    collect %>%
+    {nrow(.) >= 1}
+}
