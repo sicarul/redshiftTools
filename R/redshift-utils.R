@@ -399,11 +399,13 @@ table_attributes <- function(diststyle = c("even", "all", "key"), distkey = NULL
 		distkey <- glue("DISTKEY ({distkey})")
 	}
 	if (!is.null(compound_sort)) {
-		sortkey <- glue("COMPOUND SORTKEY ({compound_sort})")
+		compound_sort <- glue("COMPOUND SORTKEY ({paste0(compound_sort, collapse = ',')})")
 	}
 	if (!is.null(interleaved_sort)) {
-		sortkey <- glue("INTERLEAVED SORTKEY ({interleaved_sort})")
+		interleaved_sort <- glue("INTERLEAVED SORTKEY ({paste0(interleaved_sort, collapse = ',')})")
 	}
-	return(glue("{diststyle} {distkey} {sortkey}"))
+  # glue doesn't believe in NULLs, so coalesce to empty string
+  sortkey <- compound_sort %||% interleaved_sort %||% ""
+	return(glue("{diststyle} {distkey %||% ''} {sortkey}"))
 }
 
