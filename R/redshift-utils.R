@@ -435,7 +435,7 @@ ctas <- function(query, table_name, ..., temp = TRUE) {
   }
   temp_table <- ifelse(temp, "TEMP", "")
   ta <- table_attributes(...)
-  cmd <- as.character(glue("DROP TABLE IF EXISTS {table_name};CREATE TABLE {temp_table} {table_name} {ta} as ({query_txt})"))
+  cmd <- as.character(glue("DROP TABLE IF EXISTS {table_name};CREATE {temp_table} TABLE {table_name} {ta} as ({query_txt})"))
   log_if_verbose(cmd)
   DBI::dbExecute(query_con, cmd)
 }
