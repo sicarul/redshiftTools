@@ -1,18 +1,20 @@
 Package: redshiftTools
 Type: Package
 Title: Redshift Tools
-Version: 0.2.900
+Version: 0.3.900
 Authors@R: person("Pablo", "Seibelt", email = "pabloseibelt@sicarul.com",
   role = c("aut", "cre"))
 Mantainers@R: person("Pablo", "Seibelt", email = "pabloseibelt@sicarul.com",
     role = c("aut", "cre"))
 Depends:
-    R (>= 3.1.2)
+    R (>= 3.3.0)
 Imports:
     DBI,
-    RPostgres,
     aws.s3
-Description: Tools to upload data to an Amazon Redshift Database with good performance.
+Suggests:
+    RJDBC,
+    RPostgres
+Description: Tools for uploading data into Amazon Redshift from R.
 License: MIT + file LICENSE
 LazyData: TRUE
 RoxygenNote: 6.0.1

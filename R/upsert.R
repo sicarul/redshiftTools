@@ -6,7 +6,7 @@
 #'
 #' @param data a data frame
 #' @param dbcon an RPostgres connection to the redshift server
-#' @param tableName the name of the table to replace
+#' @param table_name the name of the table to replace
 #' @param split_files optional parameter to specify amount of files to split into. If not specified will look at amount of slices in Redshift to determine an optimal amount.
 #' @param keys athis optional vector contains the variables by which to upsert. If not defined, the upsert becomes an append.
 #' @param bucket the name of the temporary bucket to load the data. Will look for AWS_BUCKET_NAME on environment if not specified.
@@ -28,7 +28,7 @@
 #' host='my-redshift-url.amazon.com', port='5439',
 #' user='myuser', password='mypassword',sslmode='require')
 #'
-#' rs_upsert_table(data=nx, dbcon=con, tableName='testTable',
+#' rs_upsert_table(data=nx, dbcon=con, table_name='testTable',
 #' bucket="my-bucket", split_files=4, keys=c('a'))
 #'
 #'}
@@ -36,7 +36,7 @@
 rs_upsert_table = function(
     data,
     dbcon,
-    tableName,
+    table_name,
     keys,
     split_files,
     bucket=Sys.getenv('AWS_BUCKET_NAME'),
@@ -68,36 +68,27 @@ rs_upsert_table = function(
   }
 
   result = tryCatch({
-    stageTable=paste0(sample(letters,16),collapse = "")
+    stageTable=s3ToRedshift(dbcon, table_name, bucket, prefix, region, access_key, secret_key, iam_role_arn)
 
-    queryStmt(dbcon, sprintf("create temp table %s (like %s)", stageTable, tableName))
-
-    print("Copying data from S3 into Redshift")
-    copyStr = "copy %s from 's3://%s/%s.' region '%s' csv gzip ignoreheader 1 emptyasnull COMPUPDATE FALSE"
-
-    # Use iam role if available
-    if ((nchar(iam_role_arn) > 0)) {
-      copyStr = paste(copyStr, sprintf("iam_role '%s'", iam_role_arn), sep=" ")
-    } else {
-      copyStr = paste(copyStr, sprintf("credentials 'aws_access_key_id=%s;aws_secret_access_key=%s'", access_key, secret_key), sep=" ")
+    # Use a single transaction if using RJDBC
+    if(inherits(dbcon, 'RJDBC')){
+      queryStmt(dbcon, 'begin')
     }
-    statement = sprintf(copyStr, stageTable, bucket, prefix, region)
-    queryStmt(dbcon,statement)
-    if(!missing(keys)){
-      print("Deleting rows with same keys")
 
+    if(!missing(keys)){
       # where stage.key = table.key and...
-      keysCond = paste(stageTable,".",keys, "=", tableName,".",keys, sep="")
+      keysCond = paste(stageTable,".",keys, "=", table_name,".",keys, sep="")
       keysWhere = sub(" and $", "", paste0(keysCond, collapse="", sep=" and "))
 
       queryStmt(dbcon, sprintf('delete from %s using %s where %s',
-              tableName,
+              table_name,
               stageTable,
               keysWhere
               ))
     }
+
     print("Insert new rows")
-    queryStmt(dbcon, sprintf('insert into %s select * from %s', tableName, stageTable))
+    queryStmt(dbcon, sprintf('insert into %s select * from %s', table_name, stageTable))
 
     print("Drop staging table")
     queryStmt(dbcon, sprintf("drop table %s", stageTable))

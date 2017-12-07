@@ -45,5 +45,29 @@ queryDo = function(dbcon, query){
 
 #' @importFrom DBI dbExecute
 queryStmt = function(dbcon, query){
-  dbExecute(dbcon, query)
+  if(inherits(dbcon, 'JDBCConnection')){
+    RJDBC::dbSendUpdate(dbcon, query)
+  }else{
+    dbExecute(dbcon, query)
+  }
+}
+
+s3ToRedshift = function(dbcon, table_name, bucket, prefix, region, access_key, secret_key, iam_role_arn){
+    stageTable=paste0(sample(letters,16),collapse = "")
+    # Create temporary table for staging data
+    queryStmt(dbcon, sprintf("create temp table %s (like %s)", stageTable, table_name))
+
+    print("Copying data from S3 into Redshift")
+    copyStr = "copy %s from 's3://%s/%s.' region '%s' csv gzip ignoreheader 1 emptyasnull COMPUPDATE FALSE %s"
+
+    # Use IAM Role if available
+    if (nchar(iam_role_arn) > 0) {
+      credsStr = sprintf("iam_role '%s'", iam_role_arn)
+    } else {
+      credsStr = sprintf("credentials 'aws_access_key_id=%s;aws_secret_access_key=%s'", access_key, secret_key)
+    }
+    statement = sprintf(copyStr, stageTable, bucket, prefix, region, credsStr)
+    queryStmt(dbcon,statement)
+
+    return(stageTable)
 }

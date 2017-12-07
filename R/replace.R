@@ -5,7 +5,7 @@
 #'
 #' @param data a data frame
 #' @param dbcon an RPostgres connection to the redshift server
-#' @param tableName the name of the table to replace
+#' @param table_name the name of the table to replace
 #' @param split_files optional parameter to specify amount of files to split into. If not specified will look at amount of slices in Redshift to determine an optimal amount.
 #' @param bucket the name of the temporary bucket to load the data. Will look for AWS_BUCKET_NAME on environment if not specified.
 #' @param region the region of the bucket. Will look for AWS_DEFAULT_REGION on environment if not specified.
@@ -23,7 +23,7 @@
 #' host='my-redshift-url.amazon.com', port='5439',
 #' user='myuser', password='mypassword',sslmode='require')
 #'
-#' rs_replace_table(data=a, dbcon=con, tableName='testTable',
+#' rs_replace_table(data=a, dbcon=con, table_name='testTable',
 #' bucket="my-bucket", split_files=4)
 #'
 #' }
@@ -31,7 +31,7 @@
 rs_replace_table = function(
     data,
     dbcon,
-    tableName,
+    table_name,
     split_files,
     bucket=Sys.getenv('AWS_BUCKET_NAME'),
     region=Sys.getenv('AWS_DEFAULT_REGION'),
@@ -62,26 +62,18 @@ rs_replace_table = function(
   }
 
   result = tryCatch({
-      stageTable=paste0(sample(letters,16),collapse = "")
+      stageTable=s3ToRedshift(dbcon, table_name, bucket, prefix, region, access_key, secret_key, iam_role_arn)
 
-      queryStmt(dbcon, sprintf("create temp table %s (like %s)", stageTable, tableName))
-
-      print("Copying data from S3 into Redshift")
-      copyStr = "copy %s from 's3://%s/%s.' region '%s' csv gzip ignoreheader 1 emptyasnull COMPUPDATE FALSE"
-      if (nchar(iam_role_arn) > 0) {
-        copyStr = paste(copyStr, sprintf("iam_role '%s'", iam_role_arn), sep=" ")
-      } else {
-        copyStr = paste(copyStr, sprintf("credentials 'aws_access_key_id=%s;aws_secret_access_key=%s'", access_key, secret_key), sep=" ")
+      # Use a single transaction if using RJDBC
+      if(inherits(dbcon, 'RJDBC')){
+        queryStmt(dbcon, 'begin')
       }
-      statement = sprintf(copyStr, stageTable, bucket, prefix, region)
-      queryStmt(dbcon, statement)
-
 
       print("Deleting target table for replacement")
-      queryStmt(dbcon, sprintf("delete from %s", tableName))
+      queryStmt(dbcon, sprintf("delete from %s", table_name))
 
       print("Insert new rows")
-      queryStmt(dbcon, sprintf('insert into %s select * from %s', tableName, stageTable))
+      queryStmt(dbcon, sprintf('insert into %s select * from %s', table_name, stageTable))
 
       print("Drop staging table")
       queryStmt(dbcon, sprintf("drop table %s", stageTable))

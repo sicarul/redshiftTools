@@ -23,8 +23,55 @@ To install this package, you'll need to execute these commands:
     install.packages(c('devtools', 'httr', 'aws.s3'))
     devtools::install_github("RcppCore/Rcpp")
     devtools::install_github("r-dbi/DBI")
-    devtools::install_github("r-dbi/RPostgres")
     devtools::install_github("sicarul/redshiftTools")
+```
+
+
+## Drivers
+
+This library supports two official ways of connecting to Amazon Redshift (Others may work, but untested):
+
+### RPostgres
+This Postgres library is great, and it works even with Amazon Redshift servers with SSL enabled. The only weak point with Redshift is that it doesn't work with transactions
+
+To use it, please configure like this:
+
+``` r 
+    devtools::install_github("r-dbi/RPostgres")
+    library(RPostgres)
+    
+    con <- dbConnect(RPostgres::Postgres(), dbname="dbname",
+    host='my-redshift-url.amazon.com', port='5439',
+    user='myuser', password='mypassword',sslmode='require')
+    test=dbGetQuery('select 1')
+```
+
+### RJDBC
+If you download the official redshift driver .jar, you can use it with this R library, it's not great in the sense that you can't use it with dplyr for example, since it doesn't implement all the standard DBI interfaces. Though it has the great advantage when uploading data, that it supports transactions, enabling your data to remain consistent while uploading new data.
+
+To use it, please configure like this:
+
+``` r 
+    install.packages('RJDBC')
+    library(RJDBC)
+    
+    # Save the driver into a directory
+    dir.create('~/.redshiftTools')
+    download.file('http://s3.amazonaws.com/redshift-downloads/drivers/RedshiftJDBC41-1.1.9.1009.jar','~/.redshiftTools/redshift-driver.jar')
+    
+    # Use Redshift driver
+    driver <- JDBC("com.amazon.redshift.jdbc41.Driver", "~/.redshiftTools/redshift-driver.jar", identifier.quote="`")
+
+    # Create connection    
+    dbname="dbname"
+    host='my-redshift-url.amazon.com'
+    port='5439'
+    user='myuser'
+    password='mypassword'
+    ssl='true'
+    url <- sprintf("jdbc:redshift://%s:%s/%s?tcpKeepAlive=true&ssl=%s&sslfactory=com.amazon.redshift.ssl.NonValidatingFactory", host, port, dbname, ssl)
+    conn <- dbConnect(driver, url, user, password)
+
 ```
 
 ## Usage
@@ -43,7 +90,7 @@ d=rep(as.POSIXct('2017-01-01 20:01:32'), n),
 e=rep(as.POSIXlt('2017-01-01 20:01:32'), n),
 f=rep(paste0(rep('a', 4000), collapse=''), n) )
 
-cat(rs_create_statement(testdf, tableName='dm_great_table'))
+cat(rs_create_statement(testdf, table_name='dm_great_table'))
 
 ```
 
@@ -82,7 +129,29 @@ For example, suppose we have a table to load with 2 integer columns, we could us
     host='my-redshift-url.amazon.com', port='5439',
     user='myuser', password='mypassword',sslmode='require')
 
-    b=rs_replace_table(a, dbcon=con, tableName='mytable', bucket="mybucket", split_files=4)
-    c=rs_upsert_table(nx, dbcon=con, tableName = 'mytable', split_files=4, bucket="mybucket", keys=c('a'))
+    b=rs_replace_table(a, dbcon=con, table_name='mytable', bucket="mybucket", split_files=4)
+    c=rs_upsert_table(nx, dbcon=con, table_name = 'mytable', split_files=4, bucket="mybucket", keys=c('a'))
+
+```
+
+
+### Creating tables with data
+
+A conjunction of `rs_create_statement` and `rs_replace_table` can be found in `rs_create_table`. You can create a table from scratch from R and upload the contents of the data frame, without needing to write SQL code at all.
+
+
+``` r
+    library("aws.s3")
+    library(RPostgres)
+    library(redshiftTools)
+
+    a=data.frame(a=seq(1,10000), b=seq(10000,1))
+    
+    con <- dbConnect(RPostgres::Postgres(), dbname="dbname",
+    host='my-redshift-url.amazon.com', port='5439',
+    user='myuser', password='mypassword',sslmode='require')
+
+    b=rs_create_table(a, dbcon=con, table_name='mytable', bucket="mybucket", split_files=4)
+    
 
 ```
