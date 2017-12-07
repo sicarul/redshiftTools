@@ -387,6 +387,8 @@ update_column_types <- function(data, dbcon, table_name) {
 #'
 #' @return character
 #' @export
+#' @importFrom glue glue
+#' @importFrom rlang %||%
 table_attributes <- function(diststyle = c("even", "all", "key"), distkey = NULL, compound_sort = NULL, interleaved_sort = NULL) {
 	diststyle <- match.arg(diststyle)
   diststyle <- glue("DISTSTYLE {diststyle}")
