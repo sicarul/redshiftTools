@@ -439,3 +439,56 @@ ctas <- function(query, table_name, ..., temp = TRUE) {
   log_if_verbose(cmd)
   DBI::dbExecute(query_con, cmd)
 }
+
+#' Query details
+#'
+#' @param con Redshift Connection
+#' @param query_id (optional) integer
+#'
+#' Provided a query_id it will return the details of a single query;
+#' otherwise it will return the details of all queries available to the user associated with the con.
+#' Available details include:
+#' * query_text <chr>, query_execution_time <dbl>, usename <chr>
+#' This function is particularly useful for extracting the full text of any given query.
+#'
+#' @return data.frame
+#' @export
+#' @importFrom dplyr tbl
+#' @importFrom glue glue
+#'
+#' @examples
+query_details <- function(con, query_id = NULL) {
+  specific_query <- ifelse(is.null(query_id), "", glue("where query = {query_id}"))
+con %>%
+  tbl(sql(glue("with query_perf as (
+  select \"query\", query_execution_time, query_cpu_time, query_temp_blocks_to_disk from SVL_QUERY_METRICS_SUMMARY
+), query_time as (
+  SELECT query, userid
+  FROM STL_QUERY
+  {specific_query}
+),
+users as (
+  select usename, usesysid as userid from PG_USER
+),
+recent_query_perf as (
+select query, query_execution_time, users.usename from query_time
+  inner join (select * from users) users
+  on users.userid = query_time.userid
+  inner join (select * from query_perf) qp
+  using(query)
+  order by query_execution_time desc
+)
+
+select * from recent_query_perf
+inner join
+(select * from STL_QUERYTEXT) as foo
+using(query)
+order by query_execution_time desc, query, sequence
+"))) %>%
+  collect() %>%
+  group_by(query) %>%
+  summarise(query_text = paste0(text, collapse = ""),
+            query_execution_time = first(query_execution_time),
+            usename = first(usename)) %>%
+  mutate(query_text = query_text %>% gsub("\\n"," ", ., fixed = TRUE) %>% gsub("\\","", ., fixed = TRUE))
+}
