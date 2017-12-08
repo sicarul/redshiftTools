@@ -382,11 +382,13 @@ update_column_types <- function(data, dbcon, table_name) {
 #'
 #' @param diststyle Distribution style defaults to "even"
 #' @param distkey character. optional. Distribution key
-#' @param compound_sort character. optional. Compound sort keys
-#' @param interleaved_sort character. optional. Interleaved sort keys
+#' @param compound_sort character vector. optional. Compound sort keys
+#' @param interleaved_sort character vector. optional. Interleaved sort keys
 #'
 #' @return character
 #' @export
+#' @importFrom glue glue
+#' @importFrom rlang %||%
 table_attributes <- function(diststyle = c("even", "all", "key"), distkey = NULL, compound_sort = NULL, interleaved_sort = NULL) {
 	diststyle <- match.arg(diststyle)
   diststyle <- glue("DISTSTYLE {diststyle}")
@@ -397,11 +399,111 @@ table_attributes <- function(diststyle = c("even", "all", "key"), distkey = NULL
 		distkey <- glue("DISTKEY ({distkey})")
 	}
 	if (!is.null(compound_sort)) {
-		sortkey <- glue("COMPOUND SORTKEY ({compound_sort})")
+		compound_sort <- glue("COMPOUND SORTKEY ({paste0(compound_sort, collapse = ',')})")
 	}
 	if (!is.null(interleaved_sort)) {
-		sortkey <- glue("INTERLEAVED SORTKEY ({interleaved_sort})")
+		interleaved_sort <- glue("INTERLEAVED SORTKEY ({paste0(interleaved_sort, collapse = ',')})")
 	}
-	return(glue("{diststyle} {distkey} {sortkey}"))
+  # glue doesn't believe in NULLs, so coalesce to empty string
+  sortkey <- compound_sort %||% interleaved_sort %||% ""
+	return(glue("{diststyle} {distkey %||% ''} {sortkey}"))
 }
 
+#' Create Table as Select
+#'
+#' @param query The query, either character element or the result of a dplyr chain
+#' @param table_name The name you want the table to have
+#' @param ... Passed forward to table_attributes
+#' @param temp boolean.  By default ctas creates temp tables, if you want to override this behavior it takes an explicit named operator.
+#'
+#' @return
+#' @export
+#'
+#' @examples
+#' @importFrom dbplyr db_sql_render
+#' @importFrom DBI dbExecute
+#' @importFrom glue glue
+ctas <- function(query, table_name, ..., temp = TRUE) {
+  query_con <- query[[1]]$con
+  if("tbl_dbi" %in% class(query)) {
+    query_txt <- as.character(dbplyr::db_sql_render(query_con, query))
+  } else if ("character" %in% class(query)) {
+    stopifnot(is.atomic(query))
+    query_txt <- query
+  } else {
+    stop("Unhandled input class for query")
+  }
+  temp_table <- ifelse(temp, "TEMP", "")
+  ta <- table_attributes(...)
+  cmd <- as.character(glue("DROP TABLE IF EXISTS {table_name};CREATE {temp_table} TABLE {table_name} {ta} as ({query_txt})"))
+  log_if_verbose(cmd)
+  DBI::dbExecute(query_con, cmd)
+}
+
+#' Query details
+#'
+#' @param con Redshift Connection
+#' @param query_id (optional) integer
+#'
+#' Provided a query_id it will return the details of a single query;
+#' otherwise it will return the details of all queries available to the user associated with the con.
+#' Available details include:
+#' * query_text <chr>, query_execution_time <dbl>, usename <chr>
+#' This function is particularly useful for extracting the full text of any given query.
+#'
+#' @return data.frame
+#' @export
+#' @importFrom dplyr tbl
+#' @importFrom glue glue
+#'
+#' @examples
+query_details <- function(con, query_id = NULL) {
+  specific_query <- ifelse(is.null(query_id), "", glue("where query = {query_id}"))
+con %>%
+  tbl(sql(glue("with query_perf as (
+  select \"query\", query_execution_time, query_cpu_time, query_temp_blocks_to_disk from SVL_QUERY_METRICS_SUMMARY
+), query_time as (
+  SELECT query, userid
+  FROM STL_QUERY
+  {specific_query}
+),
+users as (
+  select usename, usesysid as userid from PG_USER
+),
+recent_query_perf as (
+select query, query_execution_time, users.usename from query_time
+  inner join (select * from users) users
+  on users.userid = query_time.userid
+  inner join (select * from query_perf) qp
+  using(query)
+  order by query_execution_time desc
+)
+
+select * from recent_query_perf
+inner join
+(select * from STL_QUERYTEXT) as foo
+using(query)
+order by query_execution_time desc, query, sequence
+"))) %>%
+  collect() %>%
+  group_by(query) %>%
+  summarise(query_text = paste0(text, collapse = ""),
+            query_execution_time = first(query_execution_time),
+            usename = first(usename)) %>%
+  mutate(query_text = query_text %>% gsub("\\n"," ", ., fixed = TRUE) %>% gsub("\\","", ., fixed = TRUE))
+}
+
+#' is_temp_table
+#'
+#' @param con Postgres Connection
+#' @param table_name Table Name
+#'
+#' @return boolean
+#' @export
+is_temp_table <- function(con, table_name) {
+  con <- rs_db()$con
+  tbl(con, sql("select * from svv_table_info where schema ~ 'pg_temp'")) %>%
+    filter(table == table_name) %>%
+    collect %>%
+    {nrow(.) >= 1}
+}
