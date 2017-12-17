@@ -3,7 +3,7 @@
 #' Upload a table to S3 and then load it with redshift, replacing the contents of that table.
 #' The table on redshift has to have the same structure and column ordering to work correctly.
 #'
-#' @param data a data frame
+#' @param df a data frame
 #' @param dbcon an RPostgres connection to the redshift server
 #' @param table_name the name of the table to replace
 #' @param split_files optional parameter to specify amount of files to split into. If not specified will look at amount of slices in Redshift to determine an optimal amount.
@@ -23,13 +23,13 @@
 #' host='my-redshift-url.amazon.com', port='5439',
 #' user='myuser', password='mypassword',sslmode='require')
 #'
-#' rs_replace_table(data=a, dbcon=con, table_name='testTable',
+#' rs_replace_table(df=a, dbcon=con, table_name='testTable',
 #' bucket="my-bucket", split_files=4)
 #'
 #' }
 #' @export
 rs_replace_table = function(
-    data,
+    df,
     dbcon,
     table_name,
     split_files,
@@ -42,20 +42,34 @@ rs_replace_table = function(
     )
   {
 
-  Sys.setenv('AWS_DEFAULT_REGION'=region)
-  Sys.setenv('AWS_ACCESS_KEY_ID'=access_key)
-  Sys.setenv('AWS_SECRET_ACCESS_KEY'=secret_key)
-  Sys.setenv('AWS_IAM_ROLE_ARN'=iam_role_arn)
+  if(!inherits(df, 'data.frame')){
+    warning("The df parameter must be a data.frame or an object compatible with it's interface")
+    return(FALSE)
+  }
+  numRows = nrow(df)
+
+  if(numRows == 0){
+    warning("Empty dataset provided, will not try uploading")
+    return(FALSE)
+  }
+
+  print(paste0("The provided data.frame has ", numRows, ' rows'))
+
 
   if(missing(split_files)){
-    print("Getting number of slices from Redshift")
-    slices = queryDo(dbcon,"select count(*) from stv_slices")
-    split_files = unlist(slices[1]*4)
-    print(sprintf("%s slices detected, will split into %s files", slices, split_files))
+    split_files = splitDetermine(dbcon)
   }
-  split_files = min(split_files, nrow(data))
+  split_files = pmin(split_files, numRows)
 
-  prefix = uploadToS3(data, bucket, split_files)
+
+  # Set env variables for S3 upload
+  Sys.setenv(
+    'AWS_DEFAULT_REGION'=region,
+    'AWS_ACCESS_KEY_ID'=access_key,
+    'AWS_SECRET_ACCESS_KEY'=secret_key,
+    'AWS_IAM_ROLE_ARN'=iam_role_arn
+  )
+  prefix = uploadToS3(df, bucket, split_files)
 
   if(wlm_slots>1){
     queryStmt(dbcon,paste0("set wlm_query_slot_count to ", wlm_slots));

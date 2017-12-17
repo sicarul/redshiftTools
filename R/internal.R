@@ -7,12 +7,6 @@ uploadToS3 = function (data, bucket, split_files){
   if(!bucket_exists(bucket)){
     stop("Bucket does not exist")
   }
-  if(nrow(data) == 0){
-    stop("Input data is empty")
-  }
-  if(nrow(data) < split_files){
-    split_files = nrow(data)
-  }
   splitted = suppressWarnings(split(data, seq(1:split_files)))
 
   for (i in 1:split_files) {
@@ -51,6 +45,19 @@ queryStmt = function(dbcon, query){
     dbExecute(dbcon, query)
   }
 }
+
+splitDetermine = function(dbcon){
+  print("Getting number of slices from Redshift")
+  slices = queryDo(dbcon,"select count(*) from stv_slices")
+  if(slices[1] < 16){ # Use more if low number of slices
+    split_files = unlist(slices[1]*2)
+  }else{
+    split_files = unlist(slices[1])
+  }
+  print(sprintf("%s slices detected, will split into %s files", slices, split_files))
+  return(split_files)
+}
+
 
 s3ToRedshift = function(dbcon, table_name, bucket, prefix, region, access_key, secret_key, iam_role_arn){
     stageTable=paste0(sample(letters,16),collapse = "")

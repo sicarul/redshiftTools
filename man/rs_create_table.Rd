@@ -4,8 +4,8 @@
 \alias{rs_create_table}
 \title{Create a table from scratch, guessing the table schema}
 \usage{
-rs_create_table(data, dbcon, table_name = deparse(substitute(data)),
-  split_files, bucket = Sys.getenv("AWS_BUCKET_NAME"),
+rs_create_table(df, dbcon, table_name = deparse(substitute(df)), split_files,
+  bucket = Sys.getenv("AWS_BUCKET_NAME"),
   region = Sys.getenv("AWS_DEFAULT_REGION"),
   access_key = Sys.getenv("AWS_ACCESS_KEY_ID"),
   secret_key = Sys.getenv("AWS_SECRET_ACCESS_KEY"),
@@ -14,7 +14,7 @@ rs_create_table(data, dbcon, table_name = deparse(substitute(data)),
   compression = T)
 }
 \arguments{
-\item{data}{a data frame}
+\item{df}{a data frame}
 
 \item{dbcon}{an RPostgres connection to the redshift server}
 
@@ -57,7 +57,7 @@ con <- dbConnect(RPostgres::Postgres(), dbname="dbname",
 host='my-redshift-url.amazon.com', port='5439',
 user='myuser', password='mypassword',sslmode='require')
 
-rs_create_table(data=a, dbcon=con, table_name='testTable',
+rs_create_table(df=a, dbcon=con, table_name='testTable',
 bucket="my-bucket", split_files=4)
 
 }

@@ -1,7 +1,7 @@
 #' Create a table from scratch, guessing the table schema
 #'
 #'
-#' @param data a data frame
+#' @param df a data frame
 #' @param dbcon an RPostgres connection to the redshift server
 #' @param table_name the name of the table to create
 #' @param split_files optional parameter to specify amount of files to split into. If not specified will look at amount of slices in Redshift to determine an optimal amount.
@@ -27,15 +27,15 @@
 #' host='my-redshift-url.amazon.com', port='5439',
 #' user='myuser', password='mypassword',sslmode='require')
 #'
-#' rs_create_table(data=a, dbcon=con, table_name='testTable',
+#' rs_create_table(df=a, dbcon=con, table_name='testTable',
 #' bucket="my-bucket", split_files=4)
 #'
 #' }
 #' @export
 rs_create_table = function(
-    data,
+    df,
     dbcon,
-    table_name=deparse(substitute(data)),
+    table_name=deparse(substitute(df)),
     split_files,
     bucket=Sys.getenv('AWS_BUCKET_NAME'),
     region=Sys.getenv('AWS_DEFAULT_REGION'),
@@ -51,12 +51,12 @@ rs_create_table = function(
     )
   {
 
-  tableSchema = rs_create_statement(data, table_name = table_name, sortkeys=sortkeys,
+  tableSchema = rs_create_statement(df, table_name = table_name, sortkeys=sortkeys,
   sortkey_style = sortkey_style, distkey=distkey, distkey_style = distkey_style,
   compression = compression)
 
   queryStmt(dbcon, tableSchema)
 
-  return(rs_replace_table(data, dbcon, table_name, split_files, bucket, region, access_key, secret_key, iam_role_arn, wlm_slots))
+  return(rs_replace_table(df, dbcon, table_name, split_files, bucket, region, access_key, secret_key, iam_role_arn, wlm_slots))
 
 }

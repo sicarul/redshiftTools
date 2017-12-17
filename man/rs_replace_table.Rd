@@ -4,7 +4,7 @@
 \alias{rs_replace_table}
 \title{Replace or upsert redshift table}
 \usage{
-rs_replace_table(data, dbcon, table_name, split_files,
+rs_replace_table(df, dbcon, table_name, split_files,
   bucket = Sys.getenv("AWS_BUCKET_NAME"),
   region = Sys.getenv("AWS_DEFAULT_REGION"),
   access_key = Sys.getenv("AWS_ACCESS_KEY_ID"),
@@ -12,7 +12,7 @@ rs_replace_table(data, dbcon, table_name, split_files,
   iam_role_arn = Sys.getenv("AWS_IAM_ROLE_ARN"), wlm_slots = 1)
 }
 \arguments{
-\item{data}{a data frame}
+\item{df}{a data frame}
 
 \item{dbcon}{an RPostgres connection to the redshift server}
 
@@ -46,7 +46,7 @@ con <- dbConnect(RPostgres::Postgres(), dbname="dbname",
 host='my-redshift-url.amazon.com', port='5439',
 user='myuser', password='mypassword',sslmode='require')
 
-rs_replace_table(data=a, dbcon=con, table_name='testTable',
+rs_replace_table(df=a, dbcon=con, table_name='testTable',
 bucket="my-bucket", split_files=4)
 
 }
