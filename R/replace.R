@@ -78,10 +78,8 @@ rs_replace_table = function(
   result = tryCatch({
       stageTable=s3ToRedshift(dbcon, table_name, bucket, prefix, region, access_key, secret_key, iam_role_arn)
 
-      # Use a single transaction if using RJDBC
-      if(inherits(dbcon, 'RJDBC')){
-        queryStmt(dbcon, 'begin')
-      }
+      # Use a single transaction
+      queryStmt(dbcon, 'begin')
 
       print("Deleting target table for replacement")
       queryStmt(dbcon, sprintf("delete from %s", table_name))

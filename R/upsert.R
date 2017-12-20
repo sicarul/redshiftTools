@@ -83,10 +83,9 @@ rs_upsert_table = function(
   result = tryCatch({
     stageTable=s3ToRedshift(dbcon, table_name, bucket, prefix, region, access_key, secret_key, iam_role_arn)
 
-    # Use a single transaction if using RJDBC
-    if(inherits(dbcon, 'RJDBC')){
-      queryStmt(dbcon, 'begin')
-    }
+    # Use a single transaction
+    queryStmt(dbcon, 'begin')
+
 
     if(!missing(keys)){
       # where stage.key = table.key and...
