@@ -2,14 +2,19 @@
 calculateCharSize <- function(col){
   col=as.character(col)
   maxChar = max(nchar(col), na.rm=T)
+  if(is.infinite(maxChar)){
+    maxChar=1000
+    warning('Empty column found, setting to 1024 length')
+  }
+
   sizes = 2^c(3:16) # From 8 to 65536, max varchar size in redshift
   fsizes = sizes[ifelse(sizes>maxChar, T, F)]
   if(length(fsizes)==0){
     warning("Character column over maximum size of 65536, set to that value but will fail if not trimmed before uploading!")
     warning(paste0('Example offending value: ', head(col[nchar(col) > 65536], 1)))
-    return(max(sizes))
+    return(max(sizes, na.rm=T))
   }else{
-    return(min(fsizes))
+    return(min(fsizes, na.rm=T))
   }
 }
 
