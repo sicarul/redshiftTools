@@ -49,8 +49,9 @@ queryStmt = function(dbcon, query){
 splitDetermine = function(dbcon){
   print("Getting number of slices from Redshift")
   slices = queryDo(dbcon,"select count(*) from stv_slices")
+  slices[1] = round(slices[1])
   if(slices[1] < 16){ # Use more if low number of slices
-    split_files = unlist(slices[1]*2)
+    split_files = 16
   }else{
     split_files = unlist(slices[1])
   }
