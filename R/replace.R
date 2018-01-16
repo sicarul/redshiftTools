@@ -94,8 +94,6 @@ rs_replace_table = function(
       queryStmt(dbcon, "COMMIT;")
 
       return(TRUE)
-  }, warning = function(w) {
-      print(w)
   }, error = function(e) {
       print(e$message)
       queryStmt(dbcon, 'ROLLBACK;')
