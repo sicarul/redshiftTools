@@ -399,7 +399,7 @@ table_attributes <- function(diststyle = c("even", "all", "key"), distkey = NULL
 	if(!is.null(compound_sort) & !is.null(interleaved_sort)) {
 		stop("only one sort type can be selected")
 	}
-	if (diststyle == "key" && !is.null(distkey)) {
+	if (diststyle == "DISTSTYLE key" && !is.null(distkey)) {
 		distkey <- glue("DISTKEY ({distkey})")
 	}
 	if (!is.null(compound_sort)) {
