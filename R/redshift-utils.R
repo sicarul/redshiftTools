@@ -391,11 +391,15 @@ update_column_types <- function(data, dbcon, table_name) {
 #' @importFrom rlang %||%
 table_attributes <- function(diststyle = c("even", "all", "key"), distkey = NULL, compound_sort = NULL, interleaved_sort = NULL) {
 	diststyle <- match.arg(diststyle)
+  if (diststyle == "even" & !is.null(distkey)) {
+    message("Overriding diststyle to 'key' because distkey is present")
+    diststyle <- "key"
+  }
   diststyle <- glue("DISTSTYLE {diststyle}")
 	if(!is.null(compound_sort) & !is.null(interleaved_sort)) {
 		stop("only one sort type can be selected")
 	}
-	if (!is.null(distkey)) {
+	if (diststyle == "DISTSTYLE key" && !is.null(distkey)) {
 		distkey <- glue("DISTKEY ({distkey})")
 	}
 	if (!is.null(compound_sort)) {
