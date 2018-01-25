@@ -511,3 +511,18 @@ is_temp_table <- function(con, table_name) {
     collect %>%
     {nrow(.) >= 1}
 }
+
+#' Generate names for temp tables
+#'
+#' Generates uuids (without dashes) to use as names for temp tables and adds a prefix.
+#'
+#' @param n integer. The number of names to generate
+#' @param prefix character. The prefix to use for the table name, defaults to tt_
+#'
+#' @return
+#' @export
+#'
+#' @examples
+temp_table_name <- function(n = 1, prefix = "tt_") {
+  paste(prefix, gsub("-", "", replicate(n,uuid::UUIDgenerate())),sep = "")
+}
