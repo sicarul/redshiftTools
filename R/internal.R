@@ -52,14 +52,10 @@ check_aws_credentials <- function() {
   rprofile_exists = file.exists(rprofile_path)
   if (aws_key_env_set) {
     log_if_verbose("AWS_ACCESS_KEY_ID is set, it will override other aws credentials") 	
-  } else if (aws_credentials_exists) {
-    if (grepl("aws_access_key_id", read.text(aws_credentials_path))) {
+  } else if (aws_credentials_exists && grepl("aws_access_key_id", read.text(aws_credentials_path))) {
       log_if_verbose("aws_access_key_id is set in ~/.aws/credentials, it will overrride other aws credentials")
-    }
-  } else if (aws_configure_exists) {
-    if (grepl("aws_access_key_id", read.text(aws_configure_path))) {
+  } else if (aws_configure_exists && grepl("aws_access_key_id", read.text(aws_configure_path))) {
 	log_if_verbose("aws_access_key_id is set in ~/.aws/configure, it will overrride other aws credentials")
-      }
   } else {
     log_if_verbose("Environment variables not set, .aws configuration files not found, will use Assume Role Provider if avaliable, than fallback to /etc/boto.cfg or ~/.boto, than fallback to instance metadata, in that exact order")
   }
