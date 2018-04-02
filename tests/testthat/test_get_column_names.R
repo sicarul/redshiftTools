@@ -10,7 +10,7 @@ test_that("can get column names from empty table", {
 
 test_that("can get column names from populated table", {
   rs_replace_table(data = cars, dbcon = zapieR::rs_db()$con, tableName = ttn, bucket = "zapier-data-science-storage")
-  expect_equivalent(suppressWarningsget_column_names(con = zapieR::rs_db()$con, ttn), c("speed", "dist"))
+  expect_equivalent(suppressWarnings(get_column_names(con = zapieR::rs_db()$con, ttn), c("speed", "dist")))
 })
 
 test_that("can get column names from populated table with schema", {
