@@ -3,5 +3,5 @@ library(redshiftTools)
 library(zapieR)
 library(lubridate)
 library(dbplyr)
-
+Sys.setenv(REDSHIFT_ROLE='arn:aws:iam::996097627176:role/production-redshift')
 test_check("redshiftTools")

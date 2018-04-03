@@ -509,7 +509,6 @@ order by query_execution_time desc, query, sequence
 #' @return boolean
 #' @export
 is_temp_table <- function(con, table_name) {
-  con <- rs_db()$con
   tbl(con, sql("select * from svv_table_info where schema ~ 'pg_temp'")) %>%
     filter(table == table_name) %>%
     collect %>%
@@ -527,6 +526,31 @@ is_temp_table <- function(con, table_name) {
 #' @export
 #'
 #' @examples
+#' @importFrom uuid UUIDgenerate
 temp_table_name <- function(n = 1, prefix = "tt_") {
   paste(prefix, gsub("-", "", replicate(n,uuid::UUIDgenerate())),sep = "")
+}
+
+#' Title
+#'
+#' @param con DBI database connection
+#' @param table table_name Either character or dbplyr::in_schema
+#'
+#' @return character vector of column names
+#' @importFrom glue glue
+#' @importFrom DBI dbColumnInfo dbSendQuery dbClearResult
+#' @export
+get_column_names <- function(con, table) {
+  # This function gets column names from Redshift even if the table has no rows or is a temp table
+  if ("ident_q" %in% class(table)) {
+    table <- decompose_in_schema(table)
+    query <- glue('select * from "{attr(table, "schema_name")}"."{attr(table, "table_name")}" limit 1')
+  } else {
+    # temp tables have to be handled differently
+    query <- glue("select * from {table} limit 1")
+  }
+  qr <- DBI::dbSendQuery(con, query)
+  column_names <- DBI::dbColumnInfo(qr)$name
+  DBI::dbClearResult(qr)
+  return(column_names)
 }
