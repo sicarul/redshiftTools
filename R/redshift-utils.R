@@ -522,6 +522,7 @@ is_temp_table <- function(con, table_name) {
 #' @export
 #'
 #' @examples
+#' @importFrom uuid UUIDgenerate
 temp_table_name <- function(n = 1, prefix = "tt_") {
   paste(prefix, gsub("-", "", replicate(n,uuid::UUIDgenerate())),sep = "")
 }

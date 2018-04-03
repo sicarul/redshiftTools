@@ -25,6 +25,7 @@ Imports:
     reticulate,
     rlang,
     stringr,
+    uuid,
     whisker,
     zapieR
 Description: Tools to upload data to an Amazon Redshift Database with good performance.
