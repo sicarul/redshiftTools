@@ -505,7 +505,6 @@ order by query_execution_time desc, query, sequence
 #' @return boolean
 #' @export
 is_temp_table <- function(con, table_name) {
-  con <- rs_db()$con
   tbl(con, sql("select * from svv_table_info where schema ~ 'pg_temp'")) %>%
     filter(table == table_name) %>%
     collect %>%
