@@ -324,13 +324,17 @@ rs_table_exists <- function(dbcon, table_name) {
   check_external_schema <- "SELECT 1 from SVV_EXTERNAL_TABLES where schemaname = '{{schemaname}}' and tablename = '{{tablename}}'"
   check_internal_schema <- "SELECT 1 from SVV_TABLES where table_schema = '{{schemaname}}' and table_name = '{{tablename}}'"
 
-  schema_is_external <- dbGetQuery(
-    dbcon,
-    whisker.render.recursive(select_exists, list(query = check_external_schema_exists, schemaname = schemaname))
-  ) %>%
-    pull("present")
-
-  check_method <- ifelse(schema_is_external, check_external_schema, check_internal_schema)
+  # where we know the schema is internal, we can short circut the check for externa schema for speed
+  if (schemaname == "public") {
+    check_method <- check_internal_schema
+  } else {
+    schema_is_external <- dbGetQuery(
+      dbcon,
+      whisker.render.recursive(select_exists, list(query = check_external_schema_exists, schemaname = schemaname))
+    ) %>%
+      pull("present")
+    check_method <- ifelse(schema_is_external, check_external_schema, check_internal_schema)
+  }
 
   return(
     dbGetQuery(
