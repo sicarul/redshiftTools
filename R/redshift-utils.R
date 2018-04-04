@@ -550,3 +550,22 @@ get_column_names <- function(con, table) {
   DBI::dbClearResult(qr)
   return(column_names)
 }
+
+#' Unload data from Redshift
+#'
+#' @param con DBI connection object
+#' @param query character query
+#' @param s3_prefix character; s3 url with trailing slash prefix
+#' @param options As in https://docs.aws.amazon.com/redshift/latest/dg/r_UNLOAD.html
+#'
+#' @return undefined
+#' @export
+#' @importFrom glue glue glue_sql
+#' @importFrom DBI dbExecute
+rs_unload <- function(con, query, s3_prefix, options = "DELIMITER ',' BZIP2 ADDQUOTES ESCAPE PARALLEL ON ALLOWOVERWRITE") {
+  auth <- make_creds()
+  view_name <- temp_table_name()
+  dbExecute(con, glue("CREATE VIEW {view_name} AS {query}"))
+  on.exit(dbExecute(con, glue("DROP VIEW {view_name}")), add = TRUE)
+  dbExecute(con, glue("UNLOAD ('select * from {view_name}') TO '{s3_prefix}' {auth} {options}", .con = con))
+}
