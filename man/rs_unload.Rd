@@ -5,7 +5,7 @@
 \title{Unload data from Redshift}
 \usage{
 rs_unload(con, query, s3_prefix,
-  options = "DELIMITER ',' BZIP2 ADDQUOTES ESCAPE PARALLEL ON")
+  options = "DELIMITER ',' BZIP2 ADDQUOTES ESCAPE PARALLEL ON ALLOWOVERWRITE")
 }
 \arguments{
 \item{con}{DBI connection object}
