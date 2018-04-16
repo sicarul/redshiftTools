@@ -33,7 +33,37 @@ coalesceifnull <- function(x, y) {
 #' @importFrom reticulate import
 boto <- reticulate::import("boto", delay_load = TRUE)
 
+read.text = function(pathname) {
+  if (file.exists(pathname)) {
+	      return (paste(readLines(pathname), collapse="\n"))
+  } 
+}
+
+check_aws_credentials <- function() {
+  aws_credentials_path = "~/.aws/credentials"
+  aws_configure_path = "~/.aws/configure"
+  renviron_path = "/etc/R/Renviron.site"
+  rprofile_path = ".Rprofile"
+  aws_key_env_set = Sys.getenv("AWS_ACCESS_KEY_ID") != ""
+  aws_configure_exists = file.exists(aws_configure_path) 
+  aws_credentials_exists = file.exists(aws_credentials_path)
+  # Does not need checking as both would set env var, keeping it here for completness
+  renviron_exists = file.exists(renviron_path)
+  rprofile_exists = file.exists(rprofile_path)
+  if (aws_key_env_set) {
+    log_if_verbose("AWS_ACCESS_KEY_ID is set, it will override other aws credentials") 	
+  } else if (aws_credentials_exists && grepl("aws_access_key_id", read.text(aws_credentials_path))) {
+      log_if_verbose("aws_access_key_id is set in ~/.aws/credentials, it will overrride other aws credentials")
+  } else if (aws_configure_exists && grepl("aws_access_key_id", read.text(aws_configure_path))) {
+	log_if_verbose("aws_access_key_id is set in ~/.aws/configure, it will overrride other aws credentials")
+  } else {
+    log_if_verbose("Environment variables not set, .aws configuration files not found, will use Assume Role Provider if avaliable, than fallback to /etc/boto.cfg or ~/.boto, than fallback to instance metadata, in that exact order")
+  }
+
+}
+
 bucket_exists <- function(bucket) {
+  check_aws_credentials()
   !is.null(boto$connect_s3()$lookup(bucket))
 }
 
