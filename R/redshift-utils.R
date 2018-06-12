@@ -417,6 +417,31 @@ table_attributes <- function(diststyle = c("even", "all", "key"), distkey = NULL
 	return(glue("{diststyle} {distkey %||% ''} {sortkey}"))
 }
 
+#' Create Table as Select Code
+#'
+#' @param query The query, either character element or the result of a dplyr chain
+#' @param table_name The name you want the table to have
+#' @param ... Passed forward to table_attributes
+#' @param temp boolean.  By default ctas creates temp tables, if you want to override this behavior it takes an explicit named operator.
+#'
+#' @return character. SQL commands to execute the specified create table as select statement
+#' @export
+ctas_code <- function(query, table_name, temp = TRUE, ...) {
+  query_con <- query[[1]]$con
+  if("tbl_dbi" %in% class(query)) {
+    query_txt <- as.character(dbplyr::db_sql_render(query_con, query))
+  } else if ("character" %in% class(query)) {
+    stopifnot(is.atomic(query))
+    query_txt <- query
+  } else {
+    stop("Unhandled input class for query")
+  }
+  temp_table <- ifelse(temp, "TEMP", "")
+  ta <- table_attributes(...)
+  cmd <- as.character(glue("DROP TABLE IF EXISTS {table_name};CREATE {temp_table} TABLE {table_name} {ta} as ({query_txt})"))
+  return(cmd)
+}
+
 #' Create Table as Select
 #'
 #' @param query The query, either character element or the result of a dplyr chain
@@ -432,18 +457,8 @@ table_attributes <- function(diststyle = c("even", "all", "key"), distkey = NULL
 #' @importFrom DBI dbExecute
 #' @importFrom glue glue
 ctas <- function(query, table_name, ..., temp = TRUE) {
+  cmd <- ctas_code(query, table_name, temp, ...)
   query_con <- query[[1]]$con
-  if("tbl_dbi" %in% class(query)) {
-    query_txt <- as.character(dbplyr::db_sql_render(query_con, query))
-  } else if ("character" %in% class(query)) {
-    stopifnot(is.atomic(query))
-    query_txt <- query
-  } else {
-    stop("Unhandled input class for query")
-  }
-  temp_table <- ifelse(temp, "TEMP", "")
-  ta <- table_attributes(...)
-  cmd <- as.character(glue("DROP TABLE IF EXISTS {table_name};CREATE {temp_table} TABLE {table_name} {ta} as ({query_txt})"))
   log_if_verbose(cmd)
   DBI::dbExecute(query_con, cmd)
 }
@@ -507,6 +522,7 @@ order by query_execution_time desc, query, sequence
 #' @param table_name Table Name
 #'
 #' @return boolean
+#' @importFrom dplyr filter collect tbl
 #' @export
 is_temp_table <- function(con, table_name) {
   tbl(con, sql("select * from svv_table_info where schema ~ 'pg_temp'")) %>%
