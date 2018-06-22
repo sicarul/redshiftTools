@@ -10,9 +10,8 @@ Installation
 To install this package, you'll need to execute these commands:
 
 ``` r
-    install.packages(c('devtools', 'httr', 'aws.s3'))
-    devtools::install_github("RcppCore/Rcpp")
-    devtools::install_github("r-dbi/DBI")
+  install.packages("aws.ec2metadata", repos = c(cloudyr = "http://cloudyr.github.io/drat", getOption("repos")))
+    install.packages(c('devtools', 'httr', 'aws.s3', 'Rcpp', 'DBI'))
     devtools::install_github("sicarul/redshiftTools")
 ```
 
