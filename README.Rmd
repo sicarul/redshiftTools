@@ -32,7 +32,7 @@ To install this package, you'll need to execute these commands:
 This library supports two official ways of connecting to Amazon Redshift (Others may work, but untested):
 
 ### RPostgres
-This Postgres library is great, and it works even with Amazon Redshift servers with SSL enabled. The only weak point with Redshift is that it doesn't work with transactions
+This Postgres library is great, and it works even with Amazon Redshift servers with SSL enabled. It previously didn't support transactions, but is now the recommended way to work with redshiftTools.
 
 To use it, please configure like this:
 
@@ -47,7 +47,7 @@ To use it, please configure like this:
 ```
 
 ### RJDBC
-If you download the official redshift driver .jar, you can use it with this R library, it's not great in the sense that you can't use it with dplyr for example, since it doesn't implement all the standard DBI interfaces. Though it has the great advantage when uploading data, that it supports transactions, enabling your data to remain consistent while uploading new data.
+If you download the official redshift driver .jar, you can use it with this R library, it's not great in the sense that you can't use it with dplyr for example, since it doesn't implement all the standard DBI interfaces, but it works fine for uploading data.
 
 To use it, please configure like this:
 
