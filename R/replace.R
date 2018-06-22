@@ -62,14 +62,7 @@ rs_replace_table = function(
   split_files = pmin(split_files, numRows)
 
 
-  # Set env variables for S3 upload
-  Sys.setenv(
-    'AWS_DEFAULT_REGION'=region,
-    'AWS_ACCESS_KEY_ID'=access_key,
-    'AWS_SECRET_ACCESS_KEY'=secret_key,
-    'AWS_IAM_ROLE_ARN'=iam_role_arn
-  )
-  prefix = uploadToS3(df, bucket, split_files)
+  prefix = uploadToS3(df, bucket, split_files, access_key, secret_key)
 
   if(wlm_slots>1){
     queryStmt(dbcon,paste0("set wlm_query_slot_count to ", wlm_slots));
@@ -100,7 +93,7 @@ rs_replace_table = function(
       return(FALSE)
   }, finally = {
     print("Deleting temporary files from S3 bucket")
-    deletePrefix(prefix, bucket, split_files)
+    deletePrefix(prefix, bucket, split_files, access_key, secret_key)
   })
 
   return (result)
