@@ -66,7 +66,8 @@ rs_upsert_table = function(
   }
   split_files = pmin(split_files, numRows)
 
-  prefix = uploadToS3(df, bucket, split_files, access_key, secret_key)
+  # Upload data to S3
+  prefix = uploadToS3(df, bucket, split_files, access_key, secret_key, region)
 
   if(wlm_slots>1){
     queryStmt(dbcon,paste0("set wlm_query_slot_count to ", wlm_slots));
@@ -109,7 +110,7 @@ rs_upsert_table = function(
       return(FALSE)
   }, finally = {
     print("Deleting temporary files from S3 bucket")
-    deletePrefix(prefix, bucket, split_files, access_key, secret_key)
+    deletePrefix(prefix, bucket, split_files, access_key, secret_key, region)
   })
 
   return (result)
