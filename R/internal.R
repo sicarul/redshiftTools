@@ -25,14 +25,14 @@ uploadToS3 = function (data, bucket, split_files, key, secret, region){
 
 #' @importFrom "aws.s3" "delete_object"
 deletePrefix = function(prefix, bucket, split_files, key, secret, region){
+  prev_reg=Sys.getenv('AWS_DEFAULT_REGION')
+  Sys.setenv( 'AWS_DEFAULT_REGION'=region)
   for (i in 1:split_files) {
     s3Name=paste(prefix, ".", formatC(i, width = 4, format = "d", flag = "0"), sep="")
     print(paste("Deleting", s3Name))
-    prev_reg=Sys.getenv('AWS_DEFAULT_REGION')
-    Sys.setenv( 'AWS_DEFAULT_REGION'=region)
     delete_object(s3Name, bucket, key=key, secret=secret, region=region)
-    Sys.setenv( 'AWS_DEFAULT_REGION'=prev_reg)
   }
+  Sys.setenv( 'AWS_DEFAULT_REGION'=prev_reg)
 }
 
 #' @importFrom DBI dbGetQuery
