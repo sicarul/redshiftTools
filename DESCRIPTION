@@ -10,11 +10,15 @@ Depends:
     R (>= 3.3.0)
 Imports:
     DBI,
-    aws.s3
+    aws.s3,
+    data.table,
+    dplyr,
+    future.apply,
+    R.utils
 Suggests:
     RJDBC,
     RPostgres
 Description: Tools for uploading data into Amazon Redshift from R.
 License: MIT + file LICENSE
 LazyData: TRUE
-RoxygenNote: 6.0.1
+RoxygenNote: 6.1.0
