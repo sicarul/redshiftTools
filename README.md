@@ -10,9 +10,15 @@ Installation
 To install this package, you'll need to execute these commands:
 
 ``` r
-  install.packages("aws.ec2metadata", repos = c(cloudyr = "http://cloudyr.github.io/drat", getOption("repos")))
-    install.packages(c('devtools', 'httr', 'aws.s3', 'Rcpp', 'DBI'))
-    devtools::install_github("danielfm123/redshiftTools")
+install.packages("aws.ec2metadata", repos = c(cloudyr = "http://cloudyr.github.io/drat", getOption("repos")))
+packages = c("devtools", "httr", "package_n","aws.s3", "Rcpp","DBI","data.table","future","future.apply","R.utils","dplyr")
+for(pack in packages){
+  if(!pack %in% rownames(installed.packages())){
+    print(paste("installing",pack))
+    install.packages(pack)
+  }
+}
+devtools::install_github("danielfm123/redshiftTools")
 ```
 
 Drivers
