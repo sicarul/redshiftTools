@@ -4,14 +4,14 @@
 \alias{rs_create_table}
 \title{Create a table from scratch, guessing the table schema}
 \usage{
-rs_create_table(df, dbcon, table_name = deparse(substitute(df)), split_files,
-  bucket = Sys.getenv("AWS_BUCKET_NAME"),
+rs_create_table(df, dbcon, table_name = deparse(substitute(df)),
+  split_files, bucket = Sys.getenv("AWS_BUCKET_NAME"),
   region = Sys.getenv("AWS_DEFAULT_REGION"),
   access_key = Sys.getenv("AWS_ACCESS_KEY_ID"),
   secret_key = Sys.getenv("AWS_SECRET_ACCESS_KEY"),
-  iam_role_arn = Sys.getenv("AWS_IAM_ROLE_ARN"), wlm_slots = 1, sortkeys,
-  sortkey_style = "compound", distkey, distkey_style = "even",
-  compression = T)
+  iam_role_arn = Sys.getenv("AWS_IAM_ROLE_ARN"), wlm_slots = 1,
+  sortkeys, sortkey_style = "compound", distkey,
+  distkey_style = "even", compression = T, threads = 0)
 }
 \arguments{
 \item{df}{a data frame}
@@ -43,6 +43,8 @@ rs_create_table(df, dbcon, table_name = deparse(substitute(df)), split_files,
 \item{distkey_style}{Distkey style, can be even or all, for the key distribution use the distkey parameter. http://docs.aws.amazon.com/redshift/latest/dg/t_Distributing_data.html}
 
 \item{compression}{Add encoding for columns whose compression algorithm is easy to guess, for the rest you should upload it to Redshift and run ANALYZE COMPRESSION}
+
+\item{treads}{number of threads used to upload the chunks to S3}
 }
 \description{
 Create a table from scratch, guessing the table schema
