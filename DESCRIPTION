@@ -10,7 +10,8 @@ Depends:
     R (>= 3.3.0)
 Imports:
     DBI,
-    aws.s3
+    aws.s3,
+    future
 Suggests:
     RJDBC,
     RPostgres

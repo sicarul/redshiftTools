@@ -3,23 +3,36 @@
 #' @importFrom "aws.s3" "put_object" "bucket_exists"
 #' @importFrom "utils" "write.csv"
 uploadToS3 = function (data, bucket, split_files, key, secret, region){
+  start_time = Sys.time()
   prefix=paste0(sample(rep(letters, 10),50),collapse = "")
   if(!bucket_exists(bucket, key=key, secret=secret, region=region)){
     stop("Bucket does not exist")
   }
-  splitted = suppressWarnings(split(data, seq(1:split_files)))
+  data = mutate_if(data,is.factor,as.character)
+  data = mutate_if(data,is.character,enc2utf8)
 
-  for (i in 1:split_files) {
-    part = data.frame(splitted[i])
-
-    tmpFile = tempfile()
-    s3Name=paste(bucket, "/", prefix, ".", formatC(i, width = 4, format = "d", flag = "0"), sep="")
-    write.csv(part, gzfile(tmpFile, encoding="UTF-8"), na='', row.names=F, quote=T)
-
-    print(paste("Uploading", s3Name))
-    put_object(file = tmpFile, object = s3Name, bucket = "", key=key, secret=secret, region=region)
-  }
-
+  toSave = suppressWarnings(split(data, seq(1:split_files)))
+  print("Generating CSV...")
+  toSave = lapply(1:split_files, function(i){
+    list(tmpFile = tempfile(),
+         gzFile = tempfile(),
+         split = toSave[[i]],
+         s3Name = paste(bucket, "/", prefix, ".", formatC(i, width = 4, format = "d", flag = "0"), sep=""))
+  })
+  setDTthreads(0)
+  void = lapply(toSave, function(saved){
+    fwrite(saved[["split"]], saved[["tmpFile"]], na='', row.names=F, quote=T)
+  })
+  print("Uploading data...")
+  void = future_lapply(toSave, function(saved){
+    print(paste("Uploading", saved[["tmpFile"]], "to" ,saved[["s3Name"]]))
+    gzip(saved[["tmpFile"]],destname=saved[["gzFile"]])
+    put_object(file = saved[["gzFile"]], object = saved[["s3Name"]], bucket = "", key=key, secret=secret, region=region)
+    file.remove(saved[["tmpFile"]],destname=saved[["gzFile"]])
+    return(saved[["s3Name"]])
+  })
+  end_time = Sys.time()
+  print(paste("Data uploaded to S3 in",end_time - start_time))
   return(prefix)
 }
 
@@ -69,6 +82,7 @@ s3ToRedshift = function(dbcon, table_name, bucket, prefix, region, access_key, s
     queryStmt(dbcon, sprintf("create temp table %s (like %s)", stageTable, table_name))
 
     print("Copying data from S3 into Redshift")
+    # copyStr = "copy %s from 's3://%s/%s.' region '%s' csv ignoreheader 1 emptyasnull COMPUPDATE FALSE %s"
     copyStr = "copy %s from 's3://%s/%s.' region '%s' csv gzip ignoreheader 1 emptyasnull COMPUPDATE FALSE %s"
 
     # Use IAM Role if available
