@@ -18,7 +18,7 @@ for(pack in packages){
     install.packages(pack)
   }
 }
-devtools::install_github("sicarul/redshiftTools")
+devtools::install_github("danielfm123/redshiftTools")
 ```
 
 Drivers
