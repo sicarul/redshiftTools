@@ -16,6 +16,7 @@
 #' @param distkey Distkey column, can only be one, if chosen the table is distributed among clusters according to a hash of this column's value.
 #' @param distkey_style Distkey style, can be even or all, for the key distribution use the distkey parameter. http://docs.aws.amazon.com/redshift/latest/dg/t_Distributing_data.html
 #' @param compression Add encoding for columns whose compression algorithm is easy to guess, for the rest you should upload it to Redshift and run ANALYZE COMPRESSION
+#' @param treads number of threads used to compress the csv files
 #'
 #' @examples
 #' library(DBI)
@@ -33,30 +34,31 @@
 #' }
 #' @export
 rs_create_table = function(
-    df,
-    dbcon,
-    table_name=deparse(substitute(df)),
-    split_files,
-    bucket=Sys.getenv('AWS_BUCKET_NAME'),
-    region=Sys.getenv('AWS_DEFAULT_REGION'),
-    access_key=Sys.getenv('AWS_ACCESS_KEY_ID'),
-    secret_key=Sys.getenv('AWS_SECRET_ACCESS_KEY'),
-    iam_role_arn=Sys.getenv('AWS_IAM_ROLE_ARN'),
-    wlm_slots=1,
-    sortkeys,
-    sortkey_style='compound',
-    distkey,
-    distkey_style='even',
-    compression=T
-    )
-  {
+  df,
+  dbcon,
+  table_name=deparse(substitute(df)),
+  split_files,
+  bucket=Sys.getenv('AWS_BUCKET_NAME'),
+  region=Sys.getenv('AWS_DEFAULT_REGION'),
+  access_key=Sys.getenv('AWS_ACCESS_KEY_ID'),
+  secret_key=Sys.getenv('AWS_SECRET_ACCESS_KEY'),
+  iam_role_arn=Sys.getenv('AWS_IAM_ROLE_ARN'),
+  wlm_slots=1,
+  sortkeys,
+  sortkey_style='compound',
+  distkey,
+  distkey_style='even',
+  compression=T,
+  threads = 0
+)
+{
 
   tableSchema = rs_create_statement(df, table_name = table_name, sortkeys=sortkeys,
-  sortkey_style = sortkey_style, distkey=distkey, distkey_style = distkey_style,
-  compression = compression)
+                                    sortkey_style = sortkey_style, distkey=distkey, distkey_style = distkey_style,
+                                    compression = compression)
 
   queryStmt(dbcon, tableSchema)
 
-  return(rs_replace_table(df, dbcon, table_name, split_files, bucket, region, access_key, secret_key, iam_role_arn, wlm_slots))
+  return(rs_replace_table(df, dbcon, table_name, split_files, bucket, region, access_key, secret_key, iam_role_arn, wlm_slots,threads))
 
 }

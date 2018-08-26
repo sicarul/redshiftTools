@@ -15,6 +15,7 @@
 #' @param secret_key the secret key with permissions fot the bucket. Will look for AWS_SECRET_ACCESS_KEY on environment if not specified.
 #' @param iam_role_arn an iam role arn with permissions fot the bucket. Will look for AWS_IAM_ROLE_ARN on environment if not specified. This is ignoring access_key and secret_key if set.
 #' @param wlm_slots amount of WLM slots to use for this bulk load http://docs.aws.amazon.com/redshift/latest/dg/tutorial-configuring-workload-management.html
+#' @param treads number of threads used to compress the csv files
 #' @examples
 #' library(DBI)
 #'
@@ -34,19 +35,20 @@
 #'}
 #' @export
 rs_upsert_table = function(
-    df,
-    dbcon,
-    table_name,
-    keys,
-    split_files,
-    bucket=Sys.getenv('AWS_BUCKET_NAME'),
-    region=Sys.getenv('AWS_DEFAULT_REGION'),
-    access_key=Sys.getenv('AWS_ACCESS_KEY_ID'),
-    secret_key=Sys.getenv('AWS_SECRET_ACCESS_KEY'),
-    iam_role_arn=Sys.getenv('AWS_IAM_ROLE_ARN'),
-    wlm_slots=1
-    )
-  {
+  df,
+  dbcon,
+  table_name,
+  keys,
+  split_files,
+  bucket=Sys.getenv('AWS_BUCKET_NAME'),
+  region=Sys.getenv('AWS_DEFAULT_REGION'),
+  access_key=Sys.getenv('AWS_ACCESS_KEY_ID'),
+  secret_key=Sys.getenv('AWS_SECRET_ACCESS_KEY'),
+  iam_role_arn=Sys.getenv('AWS_IAM_ROLE_ARN'),
+  wlm_slots=1,
+  threads = 0
+)
+{
 
   if(!inherits(df, 'data.frame')){
     warning("The df parameter must be a data.frame or an object compatible with it's interface")
@@ -67,7 +69,7 @@ rs_upsert_table = function(
   split_files = pmin(split_files, numRows)
 
   # Upload data to S3
-  prefix = uploadToS3(df, bucket, split_files, access_key, secret_key, region)
+  prefix = uploadToS3(df, bucket, split_files, access_key, secret_key, region, threads)
 
   if(wlm_slots>1){
     queryStmt(dbcon,paste0("set wlm_query_slot_count to ", wlm_slots));
@@ -86,10 +88,10 @@ rs_upsert_table = function(
       keysWhere = sub(" and $", "", paste0(keysCond, collapse="", sep=" and "))
 
       queryStmt(dbcon, sprintf('delete from %s using %s where %s',
-              table_name,
-              stageTable,
-              keysWhere
-              ))
+                               table_name,
+                               stageTable,
+                               keysWhere
+      ))
     }
 
     print("Insert new rows")
@@ -103,11 +105,11 @@ rs_upsert_table = function(
 
     return(TRUE)
   }, warning = function(w) {
-      print(w)
+    print(w)
   }, error = function(e) {
-      print(e$message)
-      queryStmt(dbcon, 'ROLLBACK;')
-      return(FALSE)
+    print(e$message)
+    queryStmt(dbcon, 'ROLLBACK;')
+    return(FALSE)
   }, finally = {
     print("Deleting temporary files from S3 bucket")
     deletePrefix(prefix, bucket, split_files, access_key, secret_key, region)

@@ -104,7 +104,7 @@ rs_create_statement <- function(
   distkey,
   distkey_style='even',
   compression=T
-  ){
+){
   definitions = getRedshiftTypesForDataFrame(df, compression)
   fields = paste(names(definitions), definitions, collapse=',\n')
   sortkey_style=tolower(sortkey_style)
