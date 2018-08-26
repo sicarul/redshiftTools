@@ -17,4 +17,4 @@ Suggests:
 Description: Tools for uploading data into Amazon Redshift from R.
 License: MIT + file LICENSE
 LazyData: TRUE
-RoxygenNote: 6.0.1
+RoxygenNote: 6.1.0
