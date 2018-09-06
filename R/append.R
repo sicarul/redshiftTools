@@ -74,10 +74,12 @@ rs_append_table = function(
     queryStmt(dbcon,paste0("set wlm_query_slot_count to ", wlm_slots));
   }
 
-  result = tryCatch({
+  tryCatch({
     stageTable=s3ToRedshift(dbcon, table_name, bucket, prefix, region, access_key, secret_key, iam_role_arn,staging=F)
   }, error = function(e){
     stop("Failed to Load Data")
+  },finally = {
+    deletePrefix(prefix, bucket, split_files, access_key, secret_key, region)
   })
 
   return (result)
