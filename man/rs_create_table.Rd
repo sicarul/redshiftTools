@@ -11,7 +11,7 @@ rs_create_table(df, dbcon, table_name = deparse(substitute(df)), split_files,
   secret_key = Sys.getenv("AWS_SECRET_ACCESS_KEY"),
   iam_role_arn = Sys.getenv("AWS_IAM_ROLE_ARN"), wlm_slots = 1, sortkeys,
   sortkey_style = "compound", distkey, distkey_style = "even",
-  compression = T)
+  compression = T, additional_params = "")
 }
 \arguments{
 \item{df}{a data frame}
@@ -43,6 +43,8 @@ rs_create_table(df, dbcon, table_name = deparse(substitute(df)), split_files,
 \item{distkey_style}{Distkey style, can be even or all, for the key distribution use the distkey parameter. http://docs.aws.amazon.com/redshift/latest/dg/t_Distributing_data.html}
 
 \item{compression}{Add encoding for columns whose compression algorithm is easy to guess, for the rest you should upload it to Redshift and run ANALYZE COMPRESSION}
+
+\item{additional_params}{Additional params to send to the COPY statement in Redshift}
 }
 \description{
 Create a table from scratch, guessing the table schema
