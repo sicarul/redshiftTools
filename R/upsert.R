@@ -15,6 +15,8 @@
 #' @param secret_key the secret key with permissions fot the bucket. Will look for AWS_SECRET_ACCESS_KEY on environment if not specified.
 #' @param iam_role_arn an iam role arn with permissions fot the bucket. Will look for AWS_IAM_ROLE_ARN on environment if not specified. This is ignoring access_key and secret_key if set.
 #' @param wlm_slots amount of WLM slots to use for this bulk load http://docs.aws.amazon.com/redshift/latest/dg/tutorial-configuring-workload-management.html
+#' @param additional_params Additional params to send to the COPY statement in Redshift
+#'
 #' @examples
 #' library(DBI)
 #'
@@ -44,7 +46,8 @@ rs_upsert_table = function(
     access_key=Sys.getenv('AWS_ACCESS_KEY_ID'),
     secret_key=Sys.getenv('AWS_SECRET_ACCESS_KEY'),
     iam_role_arn=Sys.getenv('AWS_IAM_ROLE_ARN'),
-    wlm_slots=1
+    wlm_slots=1,
+    additional_params=''
     )
   {
 
@@ -74,7 +77,7 @@ rs_upsert_table = function(
   }
 
   result = tryCatch({
-    stageTable=s3ToRedshift(dbcon, table_name, bucket, prefix, region, access_key, secret_key, iam_role_arn)
+    stageTable=s3ToRedshift(dbcon, table_name, bucket, prefix, region, access_key, secret_key, iam_role_arn, additional_params)
 
     # Use a single transaction
     queryStmt(dbcon, 'begin')

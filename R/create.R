@@ -16,6 +16,7 @@
 #' @param distkey Distkey column, can only be one, if chosen the table is distributed among clusters according to a hash of this column's value.
 #' @param distkey_style Distkey style, can be even or all, for the key distribution use the distkey parameter. http://docs.aws.amazon.com/redshift/latest/dg/t_Distributing_data.html
 #' @param compression Add encoding for columns whose compression algorithm is easy to guess, for the rest you should upload it to Redshift and run ANALYZE COMPRESSION
+#' @param additional_params Additional params to send to the COPY statement in Redshift
 #'
 #' @examples
 #' library(DBI)
@@ -47,7 +48,8 @@ rs_create_table = function(
     sortkey_style='compound',
     distkey,
     distkey_style='even',
-    compression=T
+    compression=T,
+    additional_params=''
     )
   {
 
@@ -57,6 +59,6 @@ rs_create_table = function(
 
   queryStmt(dbcon, tableSchema)
 
-  return(rs_replace_table(df, dbcon, table_name, split_files, bucket, region, access_key, secret_key, iam_role_arn, wlm_slots))
+  return(rs_replace_table(df, dbcon, table_name, split_files, bucket, region, access_key, secret_key, iam_role_arn, wlm_slots, additional_params))
 
 }

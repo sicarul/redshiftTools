@@ -63,13 +63,13 @@ splitDetermine = function(dbcon){
 }
 
 
-s3ToRedshift = function(dbcon, table_name, bucket, prefix, region, access_key, secret_key, iam_role_arn){
+s3ToRedshift = function(dbcon, table_name, bucket, prefix, region, access_key, secret_key, iam_role_arn, additional_params){
     stageTable=paste0(sample(letters,16),collapse = "")
     # Create temporary table for staging data
     queryStmt(dbcon, sprintf("create temp table %s (like %s)", stageTable, table_name))
 
     print("Copying data from S3 into Redshift")
-    copyStr = "copy %s from 's3://%s/%s.' region '%s' csv gzip ignoreheader 1 emptyasnull COMPUPDATE FALSE %s"
+    copyStr = "copy %s from 's3://%s/%s.' region '%s' csv gzip ignoreheader 1 emptyasnull COMPUPDATE FALSE STATUPDATE FALSE %s %s"
 
     # Use IAM Role if available
     if (nchar(iam_role_arn) > 0) {
@@ -77,7 +77,7 @@ s3ToRedshift = function(dbcon, table_name, bucket, prefix, region, access_key, s
     } else {
       credsStr = sprintf("credentials 'aws_access_key_id=%s;aws_secret_access_key=%s'", access_key, secret_key)
     }
-    statement = sprintf(copyStr, stageTable, bucket, prefix, region, credsStr)
+    statement = sprintf(copyStr, stageTable, bucket, prefix, region, additional_params, credsStr)
     queryStmt(dbcon,statement)
 
     return(stageTable)
