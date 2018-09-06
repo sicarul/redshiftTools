@@ -72,7 +72,7 @@ rs_replace_table = function(
   }
 
   result = tryCatch({
-      stageTable=s3ToRedshift(dbcon, table_name, bucket, prefix, region, access_key, secret_key, iam_role_arn)
+      stageTable=s3ToRedshift(dbcon, table_name, bucket, prefix, region, access_key, secret_key, iam_role_arn, additional_params)
 
       # Use a single transaction
       queryStmt(dbcon, 'begin')
