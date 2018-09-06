@@ -27,7 +27,7 @@ uploadToS3 = function (data, bucket, split_files, key, secret, region, threads){
   print("Creating CSV files...")
   setDTthreads(0)
   void = lapply(toSave, function(saved){
-    fwrite(saved[["split"]], saved[["tmpFile"]], na='', row.names=F, quote=T)
+    fwrite(saved[["split"]], saved[["tmpFile"]], na='', row.names=F, quote=T,dateTimeAs = "write.csv")
   })
 
   print("Compressing CSV files...")
