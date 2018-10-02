@@ -17,15 +17,22 @@ globalVariables(c("V1", "values")) # suppresses check note due to NSE
 #' @importFrom jsonlite stream_in
 #' @importFrom zapieR unfactor
 #' @export
-spectrum_list_partitions <- function(dbcon, table_name) {
+spectrum_list_partitions <- function(dbcon, table_name, stop_if_empty = TRUE) {
   stopifnoschema(table_name)
   this_table_parts <- table_parts(table_name)
-  dbGetQuery(dbcon, glue("select values from SVV_EXTERNAL_PARTITIONS where schemaname = '{this_table_parts[1]}' and tablename = '{this_table_parts[2]}'")) %>%
-    pull(values) %>%
-    textConnection() %>%
-    jsonlite::stream_in(verbose = FALSE) %>% # the factor = 'string' arg didn't seem to work
-    pull(V1) %>%
-    unfactor()
+  partition_values <- dbGetQuery(dbcon, glue("select values from SVV_EXTERNAL_PARTITIONS where schemaname = '{this_table_parts[1]}' and tablename = '{this_table_parts[2]}'"))
+  if (nrow(partition_values) == 0) {
+    if (stop_if_empty) {stop(glue("No partition records found for {this_table_parts[1]}.{this_table_parts[2]}"))}
+    result <- character()
+  } else {
+    result <- partition_values %>%
+      pull(values) %>%
+      textConnection() %>%
+      jsonlite::stream_in(verbose = FALSE) %>% # the factor = 'string' arg didn't seem to work
+      pull(V1) %>%
+      unfactor()
+  }
+  return(result)
 }
 
 #' Remove a partition from Redshift Spectrum
