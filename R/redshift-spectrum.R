@@ -74,16 +74,20 @@ spectrum_drop_partition <- function(dbcon, table_name, part_name, part_value) {
 #' @export
 #' @importFrom glue glue
 #' @importFrom DBI dbExecute
-spectrum_add_partition <- function(dbcon, table_name, part_name, part_value, base_location) {
+spectrum_add_partition <- function(dbcon, table_name, part_name, part_value, base_location, quote_partition_value = TRUE) {
   stopifnot("ident" %in% class(table_name))
-
+  if (quote_partition_value) {
+    q <- "'"
+  } else {
+    q <- ""
+  }
   # if the partition already exists, drop it
   table_parts <- table_parts(table_name)
-  matching_partitions <- nrow(dbGetQuery(dbcon, glue("select * from SVV_EXTERNAL_PARTITIONS where schemaname = '{table_parts[1]}' and tablename = '{table_parts[2]}' and values ILIKE '%{part_value}%'")))
+  matching_partitions <- nrow(dbGetQuery(dbcon, glue("select * from SVV_EXTERNAL_PARTITIONS where schemaname = '{table_parts[1]}' and tablename = '{table_parts[2]}' and values LIKE '%{part_value}{q}'")))
   if (matching_partitions >= 1) {
-    log_if_verbose(glue("Partition already exists, {part_name}='{part_value}'"))
+    log_if_verbose(glue("Partition already exists, {part_name}={q}{part_value}{q}"))
   } else {
-    sql_code <- glue("alter table {table_name} add partition({part_name}='{part_value}') location '{base_location}/{part_name}={part_value}'")
+    sql_code <- glue("alter table {table_name} add IF NOT EXISTS partition({part_name}={q}{part_value}{q}) location '{base_location}/{part_name}={part_value}'")
     log_if_verbose("Establishing partition: ", sql_code)
     dbExecute(dbcon, sql_code)
   }
@@ -101,7 +105,7 @@ spectrum_add_partition <- function(dbcon, table_name, part_name, part_value, bas
 #' @return Not specified, dbExecute creates table as side effect
 #' @export
 
-create_external_table <- function(dbcon, d, table_name, location, partitioned_by = "") {
+create_external_table_code <- function(dbcon, d, table_name, location, partitioned_by = "", ...) {
   # Check table name
   if (grepl("-", table_name, fixed = TRUE)) {
     stop("Hyphen in table name not allowed")
@@ -130,6 +134,22 @@ create_external_table <- function(dbcon, d, table_name, location, partitioned_by
   warnifnoschema(table_name)
   column_specification <- paste0(paste0(redshift_colnames, " ", redshift_types), collapse = ",")
   command <- glue("CREATE EXTERNAL TABLE {table_name} ({column_specification}) {partitioned_by_spec} STORED AS parquet LOCATION '{location}'")
+
+}
+
+#' Execute the DDL for an External Table
+#'
+#' @param dbcon a database connection
+#' @param d data.frame
+#' @param table_name Result from dbplyr::in_schema specifying the table and the schema
+#' @param location s3:// style url
+#' @param partitioned_by character element containing the column name
+#'
+#' @return Not specified, dbExecute creates table as side effect
+#' @export
+
+create_external_table <- function(dbcon, d, table_name, location, partitioned_by = "", ...) {
+  command <- create_external_table_code(dbcon, d, table_name, location, partition_by, ...)
   log_if_verbose("create_external_table sending the command: ", command)
   dbExecute(dbcon, command)
 }
