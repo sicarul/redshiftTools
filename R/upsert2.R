@@ -61,9 +61,7 @@ rs_cols_upsert_table = function(dat,
     return(FALSE)
   }
 
-  if (getOption("verbose")) {
-    message("The provided data.frame has ", numRows, " rows")
-  }
+  message("The provided data.frame has ", numRows, " rows")
 
   if (missing(split_files)) {
     split_files = splitDetermine(dbcon)
@@ -112,40 +110,26 @@ rs_cols_upsert_table = function(dat,
                   keysWhere,
                   changedValues
     )
-    if (getOption("verbose")) {
-      message(qu)
-    }
+    message(qu)
     res <- queryStmt(dbcon, qu)
-    if (getOption("verbose")) {
-      message(res, " rows")
-    }
+    message(res, " rows affected")
 
     qu <- sprintf('DELETE FROM %s \nUSING %s \nWHERE %s',
                   stageTable,
                   table_name,
                   keysWhere
     )
-    if (getOption("verbose")) {
-      message(qu)
-    }
+    message(qu)
     res <- queryStmt(dbcon, qu)
-    if (getOption("verbose")) {
-      message(res, " rows")
-    }
+    message(res, " rows affected")
 
     print("Insert new rows")
     qu <- sprintf('INSERT INTO %s \nSELECT * FROM %s',
                   table_name,
-                  # paste(values, collapse=", "),
-                  # paste(values, collapse=", "),
                   stageTable)
-    if (getOption("verbose")) {
-      message(qu)
-    }
+    message(qu)
     res <- queryStmt(dbcon, qu)
-    if (getOption("verbose")) {
-      message(res, " rows")
-    }
+    message(res, " rows affected")
 
     message("Commiting")
     queryStmt(dbcon, "COMMIT;")
@@ -153,9 +137,7 @@ rs_cols_upsert_table = function(dat,
     qu <- sprintf("DROP TABLE %s", stageTable)
     message(qu)
     res <- queryStmt(dbcon, qu)
-    if (getOption("verbose")) {
-      message(res, " rows")
-    }
+    message(res, " rows affected")
 
     return(TRUE)
   }, warning = function(w) {
