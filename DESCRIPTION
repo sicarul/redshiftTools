@@ -1,7 +1,7 @@
 Package: redshiftTools
 Type: Package
 Title: Redshift Tools
-Version: 0.3.900
+Version: 0.3.1000
 Authors@R: person("Pablo", "Seibelt", email = "pabloseibelt@sicarul.com",
   role = c("aut", "cre"))
 Mantainers@R: person("Pablo", "Seibelt", email = "pabloseibelt@sicarul.com",
@@ -17,4 +17,4 @@ Suggests:
 Description: Tools for uploading data into Amazon Redshift from R.
 License: MIT + file LICENSE
 LazyData: TRUE
-RoxygenNote: 6.0.1
+RoxygenNote: 6.1.1

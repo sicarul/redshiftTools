@@ -35,13 +35,13 @@ rs_cols_upsert_table(dat, dbcon, table_name, values, keys, split_files,
 
 \item{iam_role_arn}{IAM role; defaults to AWS_IAM_ROLE_ARN. Ignores access_key and secret_key.}
 
-\item{wlm_slots}{number of WLM slots for bulk load http://docs.aws.amazon.com/redshift/latest/dg/tutorial-configuring-workload-management.html}
+\item{wlm_slots}{number of WLM slots for bulk load}
 
 \item{additional_params}{Additional paramseters to Redshift COPY statement}
 }
 \description{
 Upload a table to S3 and then load to Redshift, replacing the target value
-existing in rows that have the same keys, and inserting rows with new keys.
+in existing rows that have the same keys, and inserting rows with new keys.
 New rows must match structure and column ordering of existing Redshift table.
 }
 \examples{
@@ -60,4 +60,9 @@ user='myuser', password='mypassword',sslmode='require')
 rs_cols_upsert_table(df=nx, dbcon=con, table_name='testTable',
 bucket="my-bucket", split_files=4, values=c('b'), keys=c('a'))
 }
+}
+\seealso{
+\url{https://docs.aws.amazon.com/redshift/latest/dg/merge-specify-a-column-list.html}
+
+\url{http://docs.aws.amazon.com/redshift/latest/dg/tutorial-configuring-workload-management.html}
 }
