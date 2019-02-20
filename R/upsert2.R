@@ -96,16 +96,21 @@ rs_cols_upsert_table = function(dat,
     # values to update
     setValues = paste(values, "=", stageTable, ".", values,
                       sep="", collapse=", ")
+    # check that the values actually differ from existing ones
+    changedValues = paste(table_name, ".", values, "!=",
+                          stageTable, ".", values,
+                          sep="", collapse=" OR ")
 
     # keys aren't optional
     # where stage.key = table.key and...
     keysWhere = paste(stageTable, ".", keys, "=", table_name, ".", keys,
-                      sep="", collapse=" and ")
-    qu <- sprintf('UPDATE %s \nSET %s \nFROM %s \nWHERE %s',
+                       sep="", collapse=" and ")
+    qu <- sprintf('UPDATE %s \nSET %s \nFROM %s \nWHERE %s \nAND (%s)',
                   table_name,
                   setValues,
                   stageTable,
-                  keysWhere
+                  keysWhere,
+                  changedValues
     )
     if (getOption("verbose")) {
       message(qu)
