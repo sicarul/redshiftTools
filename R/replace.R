@@ -39,6 +39,7 @@ rs_replace_table = function(
     region=Sys.getenv('AWS_DEFAULT_REGION'),
     access_key=Sys.getenv('AWS_ACCESS_KEY_ID'),
     secret_key=Sys.getenv('AWS_SECRET_ACCESS_KEY'),
+    session_token=Sys.getenv('AWS_SESSION_TOKEN'),
     iam_role_arn=Sys.getenv('AWS_IAM_ROLE_ARN'),
     wlm_slots=1,
     additional_params=''
@@ -65,14 +66,14 @@ rs_replace_table = function(
   split_files = pmin(split_files, numRows)
 
   # Upload data to S3
-  prefix = uploadToS3(df, bucket, split_files, access_key, secret_key, region)
+  prefix = uploadToS3(df, bucket, split_files, access_key, secret_key, session_token, region)
 
   if(wlm_slots>1){
     queryStmt(dbcon,paste0("set wlm_query_slot_count to ", wlm_slots));
   }
 
   result = tryCatch({
-      stageTable=s3ToRedshift(dbcon, table_name, bucket, prefix, region, access_key, secret_key, iam_role_arn, additional_params)
+      stageTable=s3ToRedshift(dbcon, table_name, bucket, prefix, region, access_key, secret_key, session_token, iam_role_arn, additional_params)
 
       # Use a single transaction
       queryStmt(dbcon, 'begin')
@@ -96,7 +97,7 @@ rs_replace_table = function(
       return(FALSE)
   }, finally = {
     print("Deleting temporary files from S3 bucket")
-    deletePrefix(prefix, bucket, split_files, access_key, secret_key, region)
+    deletePrefix(prefix, bucket, split_files, access_key, secret_key, session_token, region)
   })
 
   return (result)
