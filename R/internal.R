@@ -82,10 +82,11 @@ s3ToRedshift = function(dbcon, table_name, bucket, prefix, region, access_key, s
     if (nchar(iam_role_arn) > 0) {
       credsStr = sprintf("iam_role '%s'", iam_role_arn)
     } else {
-      credsStr = sprintf("credentials 'aws_access_key_id=%s;aws_secret_access_key=%s'", access_key, secret_key)
+      credsStr = sprintf("credentials 'aws_access_key_id=%s;aws_secret_access_key=%s;aws_session_token=%s'", access_key, secret_key, session)
     }
+    print(credsStr)
     statement = sprintf(copyStr, stageTable, bucket, prefix, region, additional_params, credsStr)
-    queryStmt(dbcon,statement)
+    queryStmt(dbcon, statement)
 
     return(stageTable)
 }
