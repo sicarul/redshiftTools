@@ -2,9 +2,9 @@
 
 #' @importFrom "aws.s3" "put_object" "bucket_exists"
 #' @importFrom "utils" "write.csv"
-uploadToS3 = function (data, bucket, split_files, key, secret, region){
+uploadToS3 = function(data, bucket, split_files, key, secret, session, region){
   prefix=paste0(sample(rep(letters, 10),50),collapse = "")
-  if(!bucket_exists(bucket, key=key, secret=secret, region=region)){
+  if(!bucket_exists(bucket, key=key, secret=secret, session=session, region=region)){
     stop("Bucket does not exist")
   }
   splitted = suppressWarnings(split(data, seq(1:split_files)))
@@ -17,20 +17,21 @@ uploadToS3 = function (data, bucket, split_files, key, secret, region){
     write.csv(part, gzfile(tmpFile, encoding="UTF-8"), na='', row.names=F, quote=T)
 
     print(paste("Uploading", s3Name))
-    put_object(file = tmpFile, object = s3Name, bucket = "", key=key, secret=secret, region=region)
+    put_object(file = tmpFile, object = s3Name, bucket = "", key=key, secret=secret,
+               session=session, region=region)
   }
 
   return(prefix)
 }
 
 #' @importFrom "aws.s3" "delete_object"
-deletePrefix = function(prefix, bucket, split_files, key, secret, region){
+deletePrefix = function(prefix, bucket, split_files, key, secret, session, region){
   prev_reg=Sys.getenv('AWS_DEFAULT_REGION')
   Sys.setenv( 'AWS_DEFAULT_REGION'=region)
   for (i in 1:split_files) {
     s3Name=paste(prefix, ".", formatC(i, width = 4, format = "d", flag = "0"), sep="")
     print(paste("Deleting", s3Name))
-    delete_object(s3Name, bucket, key=key, secret=secret, region=region)
+    delete_object(s3Name, bucket, key=key, secret=secret, session=session, region=region)
   }
   Sys.setenv( 'AWS_DEFAULT_REGION'=prev_reg)
 }
@@ -63,7 +64,7 @@ splitDetermine = function(dbcon){
 }
 
 
-s3ToRedshift = function(dbcon, table_name, bucket, prefix, region, access_key, secret_key, iam_role_arn, additional_params){
+s3ToRedshift = function(dbcon, table_name, bucket, prefix, region, access_key, secret_key, session, iam_role_arn, additional_params){
     stageTable=paste0(sample(letters,16),collapse = "")
     # Create temporary table for staging data
     queryStmt(dbcon, sprintf("create temp table %s (like %s)", stageTable, table_name))
