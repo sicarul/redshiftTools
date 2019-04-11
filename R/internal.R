@@ -70,14 +70,20 @@ s3ToRedshift = function(dbcon, table_name, bucket, prefix, region, access_key, s
     queryStmt(dbcon, sprintf("create temp table %s (like %s)", stageTable, table_name))
 
     print("Copying data from S3 into Redshift")
+    print(region)
+    print(access_key)
+    print(secret_key)
+    print(session)
+    print(iam_role_arn)
+
     copyStr = "copy %s from 's3://%s/%s.' region '%s' csv gzip ignoreheader 1 emptyasnull COMPUPDATE FALSE STATUPDATE FALSE %s %s"
 
     # Use IAM Role if available
-    if (nchar(iam_role_arn) > 0) {
-      credsStr = sprintf("iam_role '%s'", iam_role_arn)
-    } else {
-      credsStr = sprintf("credentials 'aws_access_key_id=%s;aws_secret_access_key=%s'", access_key, secret_key)
-    }
+    # if (nchar(iam_role_arn) > 0) {
+    #   credsStr = sprintf("iam_role '%s'", iam_role_arn)
+    # } else {
+    #   credsStr = sprintf("credentials 'aws_access_key_id=%s;aws_secret_access_key=%s'", access_key, secret_key)
+    # }
     statement = sprintf(copyStr, stageTable, bucket, prefix, region, additional_params, credsStr)
     queryStmt(dbcon,statement)
 
