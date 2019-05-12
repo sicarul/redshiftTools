@@ -2,13 +2,14 @@
 #'
 #'
 #' @param df a data frame
-#' @param dbcon an RPostgres connection to the redshift server
+#' @param dbcon an RPostgres/RJDBC connection to the redshift server
 #' @param table_name the name of the table to create
 #' @param split_files optional parameter to specify amount of files to split into. If not specified will look at amount of slices in Redshift to determine an optimal amount.
 #' @param bucket the name of the temporary bucket to load the data. Will look for AWS_BUCKET_NAME on environment if not specified.
 #' @param region the region of the bucket. Will look for AWS_DEFAULT_REGION on environment if not specified.
 #' @param access_key the access key with permissions for the bucket. Will look for AWS_ACCESS_KEY_ID on environment if not specified.
 #' @param secret_key the secret key with permissions fot the bucket. Will look for AWS_SECRET_ACCESS_KEY on environment if not specified.
+#' @param session_token the session key with permissions for the bucket, this will be used instead of the access/secret keys if specified. Will look for AWS_SESSION_TOKEN on environment if not specified.
 #' @param iam_role_arn an iam role arn with permissions fot the bucket. Will look for AWS_IAM_ROLE_ARN on environment if not specified. This is ignoring access_key and secret_key if set.
 #' @param wlm_slots amount of WLM slots to use for this bulk load http://docs.aws.amazon.com/redshift/latest/dg/tutorial-configuring-workload-management.html
 #' @param sortkeys Column or columns to sort the table by
@@ -53,6 +54,8 @@ rs_create_table = function(
     additional_params=''
     )
   {
+
+  message('Initiating Redshift table creation for table ',table_name)
 
   tableSchema = rs_create_statement(df, table_name = table_name, sortkeys=sortkeys,
   sortkey_style = sortkey_style, distkey=distkey, distkey_style = distkey_style,

@@ -1,6 +1,6 @@
-#' Replace redshift table
+#' Append redshift table
 #'
-#' Upload a table to S3 and then load it with redshift, replacing the contents of that table.
+#' Upload a table to S3 and then append it to a Redshift Table.
 #' The table on redshift has to have the same structure and column ordering to work correctly.
 #'
 #' @param df a data frame
@@ -26,12 +26,12 @@
 #' host='my-redshift-url.amazon.com', port='5439',
 #' user='myuser', password='mypassword',sslmode='require')
 #'
-#' rs_replace_table(df=a, dbcon=con, table_name='testTable',
+#' rs_append_table(df=a, dbcon=con, table_name='testTable',
 #' bucket="my-bucket", split_files=4)
 #'
 #' }
 #' @export
-rs_replace_table = function(
+rs_append_table = function(
     df,
     dbcon,
     table_name,
@@ -47,7 +47,7 @@ rs_replace_table = function(
     )
   {
 
-  message('Initiating Redshift table replacement for table ',table_name)
+  message('Initiating Redshift table append for table ',table_name)
 
   if(!inherits(df, 'data.frame')){
     warning("The df parameter must be a data.frame or an object compatible with it's interface")
@@ -80,9 +80,6 @@ rs_replace_table = function(
 
       # Use a single transaction
       queryStmt(dbcon, 'begin')
-
-      message("Deleting target table for replacement")
-      queryStmt(dbcon, sprintf("delete from %s", table_name))
 
       message("Insert new rows")
       queryStmt(dbcon, sprintf('insert into %s select * from %s', table_name, stageTable))

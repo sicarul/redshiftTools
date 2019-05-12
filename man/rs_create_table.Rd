@@ -4,19 +4,20 @@
 \alias{rs_create_table}
 \title{Create a table from scratch, guessing the table schema}
 \usage{
-rs_create_table(df, dbcon, table_name = deparse(substitute(df)), split_files,
-  bucket = Sys.getenv("AWS_BUCKET_NAME"),
+rs_create_table(df, dbcon, table_name = deparse(substitute(df)),
+  split_files, bucket = Sys.getenv("AWS_BUCKET_NAME"),
   region = Sys.getenv("AWS_DEFAULT_REGION"),
   access_key = Sys.getenv("AWS_ACCESS_KEY_ID"),
   secret_key = Sys.getenv("AWS_SECRET_ACCESS_KEY"),
-  iam_role_arn = Sys.getenv("AWS_IAM_ROLE_ARN"), wlm_slots = 1, sortkeys,
-  sortkey_style = "compound", distkey, distkey_style = "even",
-  compression = T, additional_params = "")
+  session_token = Sys.getenv("AWS_SESSION_TOKEN"),
+  iam_role_arn = Sys.getenv("AWS_IAM_ROLE_ARN"), wlm_slots = 1,
+  sortkeys, sortkey_style = "compound", distkey,
+  distkey_style = "even", compression = T, additional_params = "")
 }
 \arguments{
 \item{df}{a data frame}
 
-\item{dbcon}{an RPostgres connection to the redshift server}
+\item{dbcon}{an RPostgres/RJDBC connection to the redshift server}
 
 \item{table_name}{the name of the table to create}
 
@@ -29,6 +30,8 @@ rs_create_table(df, dbcon, table_name = deparse(substitute(df)), split_files,
 \item{access_key}{the access key with permissions for the bucket. Will look for AWS_ACCESS_KEY_ID on environment if not specified.}
 
 \item{secret_key}{the secret key with permissions fot the bucket. Will look for AWS_SECRET_ACCESS_KEY on environment if not specified.}
+
+\item{session_token}{the session key with permissions for the bucket, this will be used instead of the access/secret keys if specified. Will look for AWS_SESSION_TOKEN on environment if not specified.}
 
 \item{iam_role_arn}{an iam role arn with permissions fot the bucket. Will look for AWS_IAM_ROLE_ARN on environment if not specified. This is ignoring access_key and secret_key if set.}
 

@@ -5,18 +5,19 @@
 #' New rows must match structure and column ordering of existing Redshift table.
 #'
 #' @param dat a data frame
-#' @param dbcon connection to the Redshift server
-#' @param table_name the name of the table to replace
-#' @param split_files how many files to split into. Default based on number of slices in Redshift.
-#' @param values the columns that reflect updated values
-#' @param keys the key columns on which to upsert
-#' @param bucket temporary AWS bucket; defaults to AWS_BUCKET_NAME
-#' @param region temporary AWS region; defaults to AWS_DEFAULT_REGION
-#' @param access_key AWS access key; defaults to AWS_ACCESS_KEY_ID
-#' @param secret_key AWS secret key; defaults to AWS_SECRET_ACCESS_KEY
-#' @param iam_role_arn IAM role; defaults to AWS_IAM_ROLE_ARN. Ignores access_key and secret_key.
-#' @param wlm_slots number of WLM slots for bulk load
-#' @param additional_params Additional paramseters to Redshift COPY statement
+#' @param dbcon an RPostgres/RJDBC connection to the redshift server
+#' @param table_name the name of the table to update/insert
+#' @param split_files optional parameter to specify amount of files to split into. If not specified will look at amount of slices in Redshift to determine an optimal amount.
+#' @param values the columns that will be updated
+#' @param keys this optional vector contains the variables by which to upsert. If not defined, the upsert becomes an append.
+#' @param bucket the name of the temporary bucket to load the data. Will look for AWS_BUCKET_NAME on environment if not specified.
+#' @param region the region of the bucket. Will look for AWS_DEFAULT_REGION on environment if not specified.
+#' @param access_key the access key with permissions for the bucket. Will look for AWS_ACCESS_KEY_ID on environment if not specified.
+#' @param secret_key the secret key with permissions for the bucket. Will look for AWS_SECRET_ACCESS_KEY on environment if not specified.
+#' @param session_token the session key with permissions for the bucket, this will be used instead of the access/secret keys if specified. Will look for AWS_SESSION_TOKEN on environment if not specified.
+#' @param iam_role_arn an iam role arn with permissions fot the bucket. Will look for AWS_IAM_ROLE_ARN on environment if not specified. This is ignoring access_key and secret_key if set.
+#' @param wlm_slots amount of WLM slots to use for this bulk load http://docs.aws.amazon.com/redshift/latest/dg/tutorial-configuring-workload-management.html
+#' @param additional_params Additional params to send to the COPY statement in Redshift
 #'
 #' @examples
 #' library(DBI)
@@ -51,6 +52,9 @@ rs_cols_upsert_table = function(dat,
                                 iam_role_arn = Sys.getenv('AWS_IAM_ROLE_ARN'),
                                 wlm_slots = 1,
                                 additional_params = '') {
+
+  message('Initiating Redshift table upsert for table ',table_name)
+
   if (!inherits(dat, 'data.frame')) {
     warning("dat must be a data.frame or inherit from data.frame")
     return(FALSE)
@@ -125,7 +129,7 @@ rs_cols_upsert_table = function(dat,
     res <- queryStmt(dbcon, qu)
     message(res, " rows affected")
 
-    print("Insert new rows")
+    message("Insert new rows")
     qu <- sprintf('INSERT INTO %s \nSELECT * FROM %s',
                   table_name,
                   stageTable)
@@ -143,13 +147,13 @@ rs_cols_upsert_table = function(dat,
 
     return(TRUE)
   }, warning = function(w) {
-    print(w)
+    warning(w)
   }, error = function(e) {
-    print(e$message)
+    warning(e$message)
     queryStmt(dbcon, 'ROLLBACK;')
     return(FALSE)
   }, finally = {
-    print("Deleting temporary files from S3 bucket")
+    message("Deleting temporary files from S3 bucket")
     deletePrefix(prefix, bucket, split_files, access_key, secret_key, session_token, region)
   })
 

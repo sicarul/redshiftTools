@@ -9,35 +9,38 @@ rs_cols_upsert_table(dat, dbcon, table_name, values, keys, split_files,
   region = Sys.getenv("AWS_DEFAULT_REGION"),
   access_key = Sys.getenv("AWS_ACCESS_KEY_ID"),
   secret_key = Sys.getenv("AWS_SECRET_ACCESS_KEY"),
+  session_token = Sys.getenv("AWS_SESSION_TOKEN"),
   iam_role_arn = Sys.getenv("AWS_IAM_ROLE_ARN"), wlm_slots = 1,
   additional_params = "")
 }
 \arguments{
 \item{dat}{a data frame}
 
-\item{dbcon}{connection to the Redshift server}
+\item{dbcon}{an RPostgres/RJDBC connection to the redshift server}
 
-\item{table_name}{the name of the table to replace}
+\item{table_name}{the name of the table to update/insert}
 
-\item{values}{the columns that reflect updated values}
+\item{values}{the columns that will be updated}
 
-\item{keys}{the key columns on which to upsert}
+\item{keys}{this optional vector contains the variables by which to upsert. If not defined, the upsert becomes an append.}
 
-\item{split_files}{how many files to split into. Default based on number of slices in Redshift.}
+\item{split_files}{optional parameter to specify amount of files to split into. If not specified will look at amount of slices in Redshift to determine an optimal amount.}
 
-\item{bucket}{temporary AWS bucket; defaults to AWS_BUCKET_NAME}
+\item{bucket}{the name of the temporary bucket to load the data. Will look for AWS_BUCKET_NAME on environment if not specified.}
 
-\item{region}{temporary AWS region; defaults to AWS_DEFAULT_REGION}
+\item{region}{the region of the bucket. Will look for AWS_DEFAULT_REGION on environment if not specified.}
 
-\item{access_key}{AWS access key; defaults to AWS_ACCESS_KEY_ID}
+\item{access_key}{the access key with permissions for the bucket. Will look for AWS_ACCESS_KEY_ID on environment if not specified.}
 
-\item{secret_key}{AWS secret key; defaults to AWS_SECRET_ACCESS_KEY}
+\item{secret_key}{the secret key with permissions for the bucket. Will look for AWS_SECRET_ACCESS_KEY on environment if not specified.}
 
-\item{iam_role_arn}{IAM role; defaults to AWS_IAM_ROLE_ARN. Ignores access_key and secret_key.}
+\item{session_token}{the session key with permissions for the bucket, this will be used instead of the access/secret keys if specified. Will look for AWS_SESSION_TOKEN on environment if not specified.}
 
-\item{wlm_slots}{number of WLM slots for bulk load}
+\item{iam_role_arn}{an iam role arn with permissions fot the bucket. Will look for AWS_IAM_ROLE_ARN on environment if not specified. This is ignoring access_key and secret_key if set.}
 
-\item{additional_params}{Additional paramseters to Redshift COPY statement}
+\item{wlm_slots}{amount of WLM slots to use for this bulk load http://docs.aws.amazon.com/redshift/latest/dg/tutorial-configuring-workload-management.html}
+
+\item{additional_params}{Additional params to send to the COPY statement in Redshift}
 }
 \description{
 Upload a table to S3 and then load to Redshift, replacing the target value
