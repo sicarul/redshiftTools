@@ -19,7 +19,7 @@ uploadToS3 = function(data, bucket, split_files, key, secret, session, region){
     return(ifelse(res==TRUE,0,1))
   }
 
-  cores = detectCores()
+  cores = pmin(detectCores(), 4) # Up to 4 in parallel is fine
   cl = makeCluster(cores)
   registerDoParallel(cl)
 
@@ -56,7 +56,7 @@ deletePrefix = function(prefix, bucket, split_files, key, secret, session, regio
   s3Names=paste(prefix, ".", formatC(1:split_files, width = 4, format = "d", flag = "0"), sep="")
 
 
-  cores = detectCores()
+  cores = pmin(detectCores(), 4) # Up to 4 in parallel is fine
   cl = makeCluster(cores)
   registerDoParallel(cl)
 
