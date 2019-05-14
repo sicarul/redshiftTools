@@ -15,7 +15,7 @@ Imports:
 Suggests:
     RJDBC,
     RPostgres
-Description: Tools for efficiently uploading data into an Amazon Redshift database <https://aws.amazon.com/es/redshift/>.
+Description: Efficiently upload data into an Amazon Redshift database using the approach recommended by Amazon <https://aws.amazon.com/es/redshift/>.
 URL: https://github.com/sicarul/redshiftTools
 BugReports: https://github.com/sicarul/redshiftTools/issues
 License: MIT + file LICENSE

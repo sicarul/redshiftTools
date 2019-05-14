@@ -27,7 +27,7 @@
 #' n$b=n$a
 #' nx=rbind(n, data.frame(a=seq(99999:104000), b=seq(104000:99999)))
 #'
-#'\dontrun{
+#'\donttest{
 #' con <- dbConnect(RPostgres::Postgres(), dbname="dbname",
 #' host='my-redshift-url.amazon.com', port='5439',
 #' user='myuser', password='mypassword',sslmode='require')
