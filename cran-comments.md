@@ -15,4 +15,4 @@ This is a new release, so there are no reverse dependencies.
 
 ---
 
-* Examples are all set as {dontrun} because they require a connection to an actual Amazon Redshift database to work.
+* Examples are all set as {dontrun} because they require a connection to an actual Amazon Redshift database and S3 buckets to work, otherwise they'd fail every time you run a check.

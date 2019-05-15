@@ -47,7 +47,7 @@ library(DBI)
 
 a=data.frame(a=seq(1,10000), b=seq(10000,1))
 
-\donttest{
+\dontrun{
 con <- dbConnect(RPostgres::Postgres(), dbname="dbname",
 host='my-redshift-url.amazon.com', port='5439',
 user='myuser', password='mypassword',sslmode='require')
