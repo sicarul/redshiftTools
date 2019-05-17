@@ -5,6 +5,7 @@ if(getRversion() >= "2.15.1")  utils::globalVariables(c("i", "obj"))
 #' @importFrom "aws.s3" "put_object" "bucket_exists"
 #' @importFrom "utils" "write.csv"
 #' @importFrom "purrr" "map2"
+#' @importFrom "progress" "progress_bar"
 uploadToS3 = function(data, bucket, split_files, key, secret, session, region){
   prefix=paste0(sample(rep(letters, 10),50),collapse = "")
   if(!bucket_exists(bucket, key=key, secret=secret, session=session, region=region)){
@@ -15,16 +16,21 @@ uploadToS3 = function(data, bucket, split_files, key, secret, session, region){
 
   message(paste("Uploading", split_files, "files with prefix", prefix, "to bucket", bucket))
 
-  upload_part = function(part, i, prefix, bucket, key, secret, session, region){
+
+  pb <- progress_bar$new(total = split_files, format='Uploading file :current')
+  pb$tick(0)
+
+  upload_part = function(part, i, prefix){
     tmpFile = tempfile()
     s3Name=paste(bucket, "/", prefix, ".", formatC(i, width = 4, format = "d", flag = "0"), sep="")
     write.csv(part, gzfile(tmpFile, encoding="UTF-8"), na='', row.names=F, quote=T)
 
     r=put_object(file = tmpFile, object = s3Name, bucket = "", key=key, secret=secret,
         session=session, region=region)
+    pb$tick()
   }
 
-  res = map2 (splitted, 1:split_files, ~upload_part(.x, .y, prefix, bucket, key, secret, session, region))
+  res = map2 (splitted, 1:split_files, upload_part)
 
   if(length(which(!unlist(res))) > 0){
     warning("Error uploading data!")
@@ -43,11 +49,15 @@ deletePrefix = function(prefix, bucket, split_files, key, secret, session, regio
 
   message(paste("Deleting", split_files, "files with prefix", prefix, "from bucket", bucket))
 
-  deleteObj = function(obj, bucket, key, secret, session, region){
+  pb <- progress_bar$new(total = split_files, format='Deleting file :current')
+  pb$tick(0)
+
+  deleteObj = function(obj){
     delete_object(obj, bucket, key=key, secret=secret, session=session, region=region)
+    pb$tick()
   }
 
-  res = map(s3Names, ~deleteObj(.x, bucket, key, secret, session, region))
+  res = map(s3Names, deleteObj)
 }
 
 #' @importFrom DBI dbGetQuery
