@@ -50,7 +50,7 @@ deletePrefix = function(prefix, bucket, split_files, key, secret, session, regio
 
   message(paste("Deleting", split_files, "files with prefix", prefix, "from bucket", bucket))
 
-  pb <- progress_bar$new(total = split_files, format='Deleting file :current')
+  pb <- progress_bar$new(total = split_files, format='Deleting file :current/:total [:bar]')
   pb$tick(0)
 
   deleteObj = function(obj){
