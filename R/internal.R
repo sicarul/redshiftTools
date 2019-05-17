@@ -28,6 +28,7 @@ uploadToS3 = function(data, bucket, split_files, key, secret, session, region){
     r=put_object(file = tmpFile, object = s3Name, bucket = "", key=key, secret=secret,
         session=session, region=region)
     pb$tick()
+    return(r)
   }
 
   res = map2 (splitted, 1:split_files, upload_part)
