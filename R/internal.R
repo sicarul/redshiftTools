@@ -15,7 +15,7 @@ uploadToS3 = function(data, bucket, split_files, key, secret, session, region){
 
   message(paste("Uploading", split_files, "files with prefix", prefix, "to bucket", bucket))
 
-  upload_part = function(part){
+  upload_part = function(part, i){
     tmpFile = tempfile()
     s3Name=paste(bucket, "/", prefix, ".", formatC(i, width = 4, format = "d", flag = "0"), sep="")
     write.csv(part, gzfile(tmpFile, encoding="UTF-8"), na='', row.names=F, quote=T)
@@ -24,7 +24,7 @@ uploadToS3 = function(data, bucket, split_files, key, secret, session, region){
         session=session, region=region)
   }
 
-  res = future_map (splitted, upload_part, .progress=T)
+  res = future_map2 (splitted, 1:split_files, upload_part, .progress=T)
 
   if(length(which(!res)) > 0){
     warning("Error uploading data!")
