@@ -36,6 +36,7 @@ uploadToS3 = function(data, bucket, split_files, key, secret, session, region){
 }
 
 #' @importFrom "aws.s3" "delete_object"
+#' @importFrom "furrr" "future_map"
 deletePrefix = function(prefix, bucket, split_files, key, secret, session, region){
 
   s3Names=paste(prefix, ".", formatC(1:split_files, width = 4, format = "d", flag = "0"), sep="")
