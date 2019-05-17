@@ -4,7 +4,7 @@ if(getRversion() >= "2.15.1")  utils::globalVariables(c("i", "obj"))
 
 #' @importFrom "aws.s3" "put_object" "bucket_exists"
 #' @importFrom "utils" "write.csv"
-#' @importFrom "furrr" "future_map"
+#' @importFrom "furrr" "future_map2"
 uploadToS3 = function(data, bucket, split_files, key, secret, session, region){
   prefix=paste0(sample(rep(letters, 10),50),collapse = "")
   if(!bucket_exists(bucket, key=key, secret=secret, session=session, region=region)){
