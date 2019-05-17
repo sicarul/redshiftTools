@@ -20,7 +20,7 @@ uploadToS3 = function(data, bucket, split_files, key, secret, session, region){
   pb <- progress_bar$new(total = split_files, format='Uploading file :current')
   pb$tick(0)
 
-  upload_part = function(part, i, prefix){
+  upload_part = function(part, i){
     tmpFile = tempfile()
     s3Name=paste(bucket, "/", prefix, ".", formatC(i, width = 4, format = "d", flag = "0"), sep="")
     write.csv(part, gzfile(tmpFile, encoding="UTF-8"), na='', row.names=F, quote=T)
