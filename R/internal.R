@@ -24,7 +24,7 @@ uploadToS3 = function(data, bucket, split_files, key, secret, session, region){
         session=session, region=region)
   }
 
-  res = future_map2 (splitted, 1:split_files, upload_part, prefix, bucket, key, secret, session, region, .progress=T)
+  res = future_map2 (splitted, 1:split_files, ~upload_part(.x, .y, prefix, bucket, key, secret, session, region), .progress=T)
 
   if(length(which(!unlist(res))) > 0){
     warning("Error uploading data!")
@@ -47,7 +47,7 @@ deletePrefix = function(prefix, bucket, split_files, key, secret, session, regio
     delete_object(obj, bucket, key=key, secret=secret, session=session, region=region)
   }
 
-  res = future_map(s3Names, deleteObj, bucket, key, secret, session, region, .progress = TRUE)
+  res = future_map(s3Names, ~deleteObj(.x, bucket, key, secret, session, region), .progress = TRUE)
 }
 
 #' @importFrom DBI dbGetQuery
