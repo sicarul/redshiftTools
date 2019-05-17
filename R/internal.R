@@ -17,7 +17,7 @@ uploadToS3 = function(data, bucket, split_files, key, secret, session, region){
   message(paste("Uploading", split_files, "files with prefix", prefix, "to bucket", bucket))
 
 
-  pb <- progress_bar$new(total = split_files, format='Uploading file :current')
+  pb <- progress_bar$new(total = split_files, format='Uploading file :current/:total [:bar]')
   pb$tick(0)
 
   upload_part = function(part, i){
