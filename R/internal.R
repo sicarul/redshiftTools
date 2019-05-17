@@ -4,7 +4,7 @@ if(getRversion() >= "2.15.1")  utils::globalVariables(c("i", "obj"))
 
 #' @importFrom "aws.s3" "put_object" "bucket_exists"
 #' @importFrom "utils" "write.csv"
-#' @importFrom "furrr" "future_map2"
+#' @importFrom "purrr" "map2"
 uploadToS3 = function(data, bucket, split_files, key, secret, session, region){
   prefix=paste0(sample(rep(letters, 10),50),collapse = "")
   if(!bucket_exists(bucket, key=key, secret=secret, session=session, region=region)){
@@ -24,7 +24,7 @@ uploadToS3 = function(data, bucket, split_files, key, secret, session, region){
         session=session, region=region)
   }
 
-  res = future_map2 (splitted, 1:split_files, ~upload_part(.x, .y, prefix, bucket, key, secret, session, region), .progress=T)
+  res = map2 (splitted, 1:split_files, ~upload_part(.x, .y, prefix, bucket, key, secret, session, region))
 
   if(length(which(!unlist(res))) > 0){
     warning("Error uploading data!")
@@ -36,7 +36,7 @@ uploadToS3 = function(data, bucket, split_files, key, secret, session, region){
 }
 
 #' @importFrom "aws.s3" "delete_object"
-#' @importFrom "furrr" "future_map"
+#' @importFrom "purrr" "map"
 deletePrefix = function(prefix, bucket, split_files, key, secret, session, region){
 
   s3Names=paste(prefix, ".", formatC(1:split_files, width = 4, format = "d", flag = "0"), sep="")
@@ -47,7 +47,7 @@ deletePrefix = function(prefix, bucket, split_files, key, secret, session, regio
     delete_object(obj, bucket, key=key, secret=secret, session=session, region=region)
   }
 
-  res = future_map(s3Names, ~deleteObj(.x, bucket, key, secret, session, region), .progress = TRUE)
+  res = map(s3Names, ~deleteObj(.x, bucket, key, secret, session, region))
 }
 
 #' @importFrom DBI dbGetQuery

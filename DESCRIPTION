@@ -9,7 +9,7 @@ Depends:
 Imports:
     DBI,
     aws.s3,
-    furrr
+    purrr
 Suggests:
     RJDBC,
     RPostgres
