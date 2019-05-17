@@ -15,7 +15,7 @@ uploadToS3 = function(data, bucket, split_files, key, secret, session, region){
 
   message(paste("Uploading", split_files, "files with prefix", prefix, "to bucket", bucket))
 
-  upload_part = function(part, i){
+  upload_part = function(part, i, prefix, bucket, key, secret, session, region){
     tmpFile = tempfile()
     s3Name=paste(bucket, "/", prefix, ".", formatC(i, width = 4, format = "d", flag = "0"), sep="")
     write.csv(part, gzfile(tmpFile, encoding="UTF-8"), na='', row.names=F, quote=T)
@@ -24,7 +24,7 @@ uploadToS3 = function(data, bucket, split_files, key, secret, session, region){
         session=session, region=region)
   }
 
-  res = future_map2 (splitted, 1:split_files, upload_part, .progress=T)
+  res = future_map2 (splitted, 1:split_files, upload_part, prefix, bucket, key, secret, session, region, .progress=T)
 
   if(length(which(!unlist(res))) > 0){
     warning("Error uploading data!")
@@ -43,11 +43,11 @@ deletePrefix = function(prefix, bucket, split_files, key, secret, session, regio
 
   message(paste("Deleting", split_files, "files with prefix", prefix, "from bucket", bucket))
 
-  deleteObj = function(obj){
+  deleteObj = function(obj, bucket, key, secret, session, region){
     delete_object(obj, bucket, key=key, secret=secret, session=session, region=region)
   }
 
-  res = future_map(s3Names, deleteObj, .progress = TRUE)
+  res = future_map(s3Names, deleteObj, bucket, key, secret, session, region, .progress = TRUE)
 }
 
 #' @importFrom DBI dbGetQuery
