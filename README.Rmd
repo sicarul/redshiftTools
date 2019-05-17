@@ -10,6 +10,12 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+
+![](http://www.r-pkg.org/badges/version-last-release/redshiftTools)
+![](http://cranlogs.r-pkg.org/badges/redshiftTools)
+
+
+
 # redshiftTools
 
 This is an R Package meant to easen common operations with Amazon Redshift. The first motivation for this package was making it easier for bulk uploads, where the procedure for uploading data consists in generating various CSV files, uploading them to an S3 bucket and then calling a copy command on the server, this package helps with all those tasks in encapsulated functions.
@@ -17,10 +23,15 @@ This is an R Package meant to easen common operations with Amazon Redshift. The 
 
 ## Installation
 
-To install this package, you'll need to execute these commands:
+To install the latest CRAN version, you'll need to execute:
 
 ``` r
-    install.packages(c('devtools', 'httr', 'aws.s3', 'Rcpp', 'DBI'))
+    install.packages('redshiftTools')
+```
+
+If instead you want to install the latest github master version:
+
+``` r
     devtools::install_github("sicarul/redshiftTools")
 ```
 

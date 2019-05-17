@@ -12,10 +12,15 @@ tasks in encapsulated functions.
 Installation
 ------------
 
-To install this package, you’ll need to execute these commands:
+To install the latest CRAN version, you’ll need to execute:
 
 ``` r
-    install.packages(c('devtools', 'httr', 'aws.s3', 'Rcpp', 'DBI'))
+    install.packages('redshiftTools')
+```
+
+If instead you want to install the latest github master version:
+
+``` r
     devtools::install_github("sicarul/redshiftTools")
 ```
 

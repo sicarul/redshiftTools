@@ -4,30 +4,18 @@ if(getRversion() >= "2.15.1")  utils::globalVariables(c("i", "obj"))
 
 #' @importFrom "aws.s3" "put_object" "bucket_exists"
 #' @importFrom "utils" "write.csv"
-#' @importFrom "parallel" "detectCores" "makeCluster" "stopCluster"
-#' @importFrom "foreach" "foreach" "%dopar%" "registerDoSEQ"
-#' @importFrom "doParallel" "registerDoParallel"
+#' @importFrom "furrr" "future_map"
 uploadToS3 = function(data, bucket, split_files, key, secret, session, region){
   prefix=paste0(sample(rep(letters, 10),50),collapse = "")
   if(!bucket_exists(bucket, key=key, secret=secret, session=session, region=region)){
     stop("Bucket does not exist")
   }
+
   splitted = suppressWarnings(split(data, seq(1:split_files)))
-
-  upload_part = function(i){
-
-    return(ifelse(res==TRUE,0,1))
-  }
-
-  cores = pmin(detectCores(), 4) # Up to 4 in parallel is fine
-  cl = makeCluster(cores)
-  registerDoParallel(cl)
 
   message(paste("Uploading", split_files, "files with prefix", prefix, "to bucket", bucket))
 
-  res = foreach (i=1:split_files, .combine='c') %dopar% {
-    part = data.frame(splitted[i])
-
+  upload_part = function(part){
     tmpFile = tempfile()
     s3Name=paste(bucket, "/", prefix, ".", formatC(i, width = 4, format = "d", flag = "0"), sep="")
     write.csv(part, gzfile(tmpFile, encoding="UTF-8"), na='', row.names=F, quote=T)
@@ -36,8 +24,7 @@ uploadToS3 = function(data, bucket, split_files, key, secret, session, region){
         session=session, region=region)
   }
 
-  stopCluster(cl)
-  registerDoSEQ()
+  res = future_map (splitted, upload_part, .progress=T)
 
   if(length(which(!res)) > 0){
     warning("Error uploading data!")
@@ -50,26 +37,16 @@ uploadToS3 = function(data, bucket, split_files, key, secret, session, region){
 
 #' @importFrom "aws.s3" "delete_object"
 deletePrefix = function(prefix, bucket, split_files, key, secret, session, region){
-  prev_reg=Sys.getenv('AWS_DEFAULT_REGION')
-  Sys.setenv( 'AWS_DEFAULT_REGION'=region)
 
   s3Names=paste(prefix, ".", formatC(1:split_files, width = 4, format = "d", flag = "0"), sep="")
 
-
-  cores = pmin(detectCores(), 4) # Up to 4 in parallel is fine
-  cl = makeCluster(cores)
-  registerDoParallel(cl)
-
   message(paste("Deleting", split_files, "files with prefix", prefix, "from bucket", bucket))
 
-  res = foreach (obj=s3Names, .combine='c') %dopar% {
+  deleteObj = function(obj){
     delete_object(obj, bucket, key=key, secret=secret, session=session, region=region)
   }
 
-  stopCluster(cl)
-  registerDoSEQ()
-
-  Sys.setenv( 'AWS_DEFAULT_REGION'=prev_reg)
+  res = future_map(s3Names, deleteObj, .progress = TRUE)
 }
 
 #' @importFrom DBI dbGetQuery

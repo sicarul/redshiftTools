@@ -1,7 +1,7 @@
 Package: redshiftTools
 Type: Package
 Title: Amazon Redshift Tools
-Version: 1.0.0
+Version: 1.0.0.9000
 Authors@R: person("Pablo", "Seibelt", email = "pabloseibelt@sicarul.com",
   role = c("aut", "cre"))
 Depends:
@@ -9,9 +9,7 @@ Depends:
 Imports:
     DBI,
     aws.s3,
-    foreach,
-    doParallel,
-    parallel
+    furrr
 Suggests:
     RJDBC,
     RPostgres
