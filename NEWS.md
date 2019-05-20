@@ -1,9 +1,7 @@
-# redshiftTools
-
-##  1.0.1
+## redshiftTools 1.0.1
 
 Fixed eagerness on parallelization when uploading files causing issues when many processes are run at once.
 
-##  1.0
+## redshiftTools 1.0
 
 Initial CRAN release

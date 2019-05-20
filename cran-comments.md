@@ -11,8 +11,10 @@
 
 ## Reverse dependencies
 
-This is a new release, so there are no reverse dependencies.
+There are no reverse dependencies.
 
 ---
 
 * Examples are all set as {dontrun} because they require a connection to an actual Amazon Redshift database and S3 buckets to work, otherwise they'd fail every time you run a check.
+
+* Updating to fix an issue with excessive parallelization.
