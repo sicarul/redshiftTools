@@ -75,15 +75,23 @@ queryStmt = function(dbcon, query){
   }
 }
 
-splitDetermine = function(dbcon){
+splitDetermine = function(dbcon, numRows, rowSize){
   message("Getting number of slices from Redshift")
   slices = queryDo(dbcon,"select count(*) from stv_slices")
-  slices[1] = round(slices[1])
-  if(slices[1] < 16){ # Use more if low number of slices
-    split_files = 16
+  slices_num = round(slices[1,'count'])
+  split_files = slices_num
+
+  bigSplit = pmin(floor((numRows*rowSize)/(2048*1024*1024)), 800) #2GB Per file, because object size in R is overestimated and we also compress the files. Up to 800 files
+  smallSplit = pmax((numRows*rowSize)/(10*1024*1024), 1) #10MB per file, very small files
+
+  if(bigSplit > slices_num){
+    split_files=slices_num*round(bigSplit/slices_num) # Round to nearest multiple of slices, optimizes the load
+  }else if(smallSplit < slices_num){
+    split_files=smallSplit
   }else{
-    split_files = unlist(slices[1])
+    split_files=slices_num
   }
+
   message(sprintf("%s slices detected, will split into %s files", slices, split_files))
   return(split_files)
 }
