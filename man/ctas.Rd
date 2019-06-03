@@ -4,7 +4,7 @@
 \alias{ctas}
 \title{Create Table as Select}
 \usage{
-ctas(query, table_name, ..., temp = TRUE)
+ctas(query, table_name, ..., temp = TRUE, view = FALSE)
 }
 \arguments{
 \item{query}{The query, either character element or the result of a dplyr chain}

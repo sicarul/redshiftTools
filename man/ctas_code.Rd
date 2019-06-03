@@ -4,7 +4,7 @@
 \alias{ctas_code}
 \title{Create Table as Select Code}
 \usage{
-ctas_code(query, table_name, temp = TRUE, ...)
+ctas_code(query, table_name, temp = TRUE, view = FALSE, ...)
 }
 \arguments{
 \item{query}{The query, either character element or the result of a dplyr chain}

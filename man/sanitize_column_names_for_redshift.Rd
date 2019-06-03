@@ -4,7 +4,7 @@
 \alias{sanitize_column_names_for_redshift}
 \title{Make Column Names that Redshift Can Be Happy With}
 \usage{
-sanitize_column_names_for_redshift(.data)
+sanitize_column_names_for_redshift(.data, rw_prefix = TRUE)
 }
 \arguments{
 \item{.data}{data.frame or character vector}

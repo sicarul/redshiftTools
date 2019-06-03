@@ -2,6 +2,7 @@
 
 export(compare_schema_d_to_db)
 export(create_external_table)
+export(create_external_table_code)
 export(ctas)
 export(ctas_code)
 export(decompose_in_schema)

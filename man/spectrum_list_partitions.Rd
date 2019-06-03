@@ -4,7 +4,7 @@
 \alias{spectrum_list_partitions}
 \title{List Spectrum partitions}
 \usage{
-spectrum_list_partitions(dbcon, table_name)
+spectrum_list_partitions(dbcon, table_name, stop_if_empty = TRUE)
 }
 \arguments{
 \item{dbcon}{regular db connection object}

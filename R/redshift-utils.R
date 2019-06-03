@@ -429,7 +429,10 @@ table_attributes <- function(diststyle = c("even", "all", "key"), distkey = NULL
 #'
 #' @return character. SQL commands to execute the specified create table as select statement
 #' @export
-ctas_code <- function(query, table_name, temp = TRUE, ...) {
+ctas_code <- function(query, table_name, temp = TRUE, view = FALSE,...) {
+  if (temp && view) {
+    temp <- FALSE
+  }
   query_con <- query[[1]]$con
   if("tbl_dbi" %in% class(query)) {
     query_txt <- as.character(dbplyr::db_sql_render(query_con, query))
@@ -440,8 +443,15 @@ ctas_code <- function(query, table_name, temp = TRUE, ...) {
     stop("Unhandled input class for query")
   }
   temp_table <- ifelse(temp, "TEMP", "")
-  ta <- table_attributes(...)
-  cmd <- as.character(glue("DROP TABLE IF EXISTS {table_name};CREATE {temp_table} TABLE {table_name} {ta} as ({query_txt})"))
+  table_or_view <- ifelse(view, "VIEW", "TABLE")
+  # ta mostly sets up dist keys and sort keys, these don't apply to views
+  if (view) {
+    ta <- ""
+  } else {
+    ta <- table_attributes(...)
+  }
+  # decided to forgo handing late binding views because it requires that all table names be fully qualified - which seems hard to promise.
+  cmd <- as.character(glue("DROP {table_or_view} IF EXISTS {table_name};CREATE {temp_table} {table_or_view} {table_name} {ta} as ({query_txt})"))
   return(cmd)
 }
 
@@ -459,8 +469,8 @@ ctas_code <- function(query, table_name, temp = TRUE, ...) {
 #' @importFrom dbplyr db_sql_render
 #' @importFrom DBI dbExecute
 #' @importFrom glue glue
-ctas <- function(query, table_name, ..., temp = TRUE) {
-  cmd <- ctas_code(query, table_name, temp, ...)
+ctas <- function(query, table_name, ..., temp = TRUE, view = FALSE) {
+  cmd <- ctas_code(query, table_name, temp, view, ...)
   query_con <- query[[1]]$con
   log_if_verbose(cmd)
   DBI::dbExecute(query_con, cmd)
