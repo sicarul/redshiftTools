@@ -149,7 +149,7 @@ create_external_table_code <- function(dbcon, d, table_name, location, partition
 #' @export
 
 create_external_table <- function(dbcon, d, table_name, location, partitioned_by = "", ...) {
-  command <- create_external_table_code(dbcon, d, table_name, location, partition_by, ...)
+  command <- create_external_table_code(dbcon, d, table_name, location, partitioned_by, ...)
   log_if_verbose("create_external_table sending the command: ", command)
   dbExecute(dbcon, command)
 }
