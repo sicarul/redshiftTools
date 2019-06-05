@@ -82,7 +82,7 @@ splitDetermine = function(dbcon, numRows, rowSize){
   split_files = slices_num
 
   bigSplit = pmin(floor((numRows*rowSize)/(2048*1024*1024)), 800) #2GB Per file, because object size in R is overestimated and we also compress the files. Up to 800 files
-  smallSplit = pmax((numRows*rowSize)/(10*1024*1024), 1) #10MB per file, very small files
+  smallSplit = pmax(ceiling((numRows*rowSize)/(10*1024*1024)), 1) #10MB per file, very small files
 
   if(bigSplit > slices_num){
     split_files=slices_num*round(bigSplit/slices_num) # Round to nearest multiple of slices, optimizes the load
