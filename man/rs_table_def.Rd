@@ -4,12 +4,14 @@
 \alias{rs_table_def}
 \title{Show table information}
 \usage{
-rs_table_def(dbcon, tablename)
+rs_table_def(dbcon, table, schema = "public")
 }
 \arguments{
 \item{dbcon}{an RPostgres/RJDBC connection to the redshift server}
 
-\item{tablename}{redshift table in the format {schema name}.{table name}}
+\item{table}{table name}
+
+\item{schema}{schema. defaults to public}
 }
 \value{
 a data.frame containing table information

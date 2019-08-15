@@ -3,33 +3,26 @@
 #' Lists all tables available in redshift database
 #'
 #' @param dbcon an RPostgres/RJDBC connection to the redshift server
-#' @param pattern regular expression to match subset. defaults to all tables
 #'
-#' @return a character vector of table names in the format {schema name}.{table name}
+#' @return a data.frame of table names
 #' @export
-rs_list_tables <- function(dbcon, pattern='.*') {
-  grep(
-    pattern,
-    dbGetQuery(dbcon, "select schemaname || '.' || tablename from pg_tables")[[1]],
-    value = T
-  )
-
+rs_list_tables <- function(dbcon) {
+  dbGetQuery(dbcon, "select schemaname as schema, tablename as table,schemaname || '.' || tablename as full_name from pg_tables")
 }
 
 
 #' Show table information
 #'
 #' @param dbcon an RPostgres/RJDBC connection to the redshift server
-#' @param tablename redshift table in the format {schema name}.{table name}
+#' @param table table name
+#' @param schema schema. defaults to public
+
 #'
 #' @return a data.frame containing table information
 #' @export
-rs_table_def <- function(dbcon,tablename) {
-  split <- strsplit(tablename,split='\\.')[[1]]
-  schemaname <- split[[1]]
-  tablename <- split[[2]]
+rs_table_def <- function(dbcon,table,schema='public') {
 
-  df <- dbGetQuery(dbcon,sprintf("set search_path to %s; select * from pg_table_def where tablename = '%s'",schemaname,tablename))
+  df <- dbGetQuery(dbcon,sprintf("set search_path to %s; select * from pg_table_def where tablename = '%s'",schema,table))
 
   return(df)
 }

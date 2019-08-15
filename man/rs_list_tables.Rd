@@ -4,15 +4,13 @@
 \alias{rs_list_tables}
 \title{List redshift tables}
 \usage{
-rs_list_tables(dbcon, pattern = ".*")
+rs_list_tables(dbcon)
 }
 \arguments{
 \item{dbcon}{an RPostgres/RJDBC connection to the redshift server}
-
-\item{pattern}{regular expression to match subset. defaults to all tables}
 }
 \value{
-a character vector of table names in the format {schema name}.{table name}
+a data.frame of table names
 }
 \description{
 Lists all tables available in redshift database
