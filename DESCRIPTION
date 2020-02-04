@@ -28,3 +28,4 @@ Collate:
     'table_definition.R'
     'upsert.R'
     'upsert2.R'
+    'rs_utils.R'
