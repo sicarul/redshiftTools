@@ -7,10 +7,8 @@
 #' @param ... Options passed to redshiftTools::ctas to create the table
 #' @param additional_processing Defined as functional chain, e.g. . %>% identity
 #'
-#' @return
+#' @return Unevaluated dbplyr of materialized temp table
 #' @export
-#'
-#' @examples
 mini_cube <- function(db_fun, name, start, end, resulting_table_name, ..., additional_processing = . %>% {.}) {
   mini_cube_event <- paste0("tt_", gsub("-", "", generate_uuids(1)))
   if (is.null(resulting_table_name)) {

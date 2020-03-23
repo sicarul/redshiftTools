@@ -4,8 +4,15 @@
 \alias{mini_cube}
 \title{Create a mini event_cube}
 \usage{
-mini_cube(db_fun, name, start, end, resulting_table_name, ...,
-  additional_processing = . \%>\% {     . })
+mini_cube(
+  db_fun,
+  name,
+  start,
+  end,
+  resulting_table_name,
+  ...,
+  additional_processing = . \%>\% {     . }
+)
 }
 \arguments{
 \item{db_fun}{A R6DB Function}
@@ -19,6 +26,9 @@ mini_cube(db_fun, name, start, end, resulting_table_name, ...,
 \item{...}{Options passed to redshiftTools::ctas to create the table}
 
 \item{additional_processing}{Defined as functional chain, e.g. . %>% identity}
+}
+\value{
+Unevaluated dbplyr of materialized temp table
 }
 \description{
 Create a mini event_cube
