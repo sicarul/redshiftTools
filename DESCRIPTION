@@ -12,7 +12,8 @@ Imports:
     DBI,
     aws.s3,
     purrr,
-    progress
+    progress,
+    magrittr
 Suggests:
     RJDBC,
     RPostgres
