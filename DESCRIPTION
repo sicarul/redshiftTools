@@ -2,8 +2,10 @@ Package: redshiftTools
 Type: Package
 Title: Amazon Redshift Tools
 Version: 1.0.2
-Authors@R: person("Pablo", "Seibelt", email = "pabloseibelt@sicarul.com",
-  role = c("aut", "cre"))
+Authors@R: c(
+    person(given = "Jake",  family = "Russ",    email = "jake@redoakstrategic.com", role = c("aut", "cre")),
+    person(given = "Pablo", family = "Seibelt", email = "pabloseibelt@sicarul.com", role = c("aut"),
+    person("Red Oak Strategic", role = "cph"))
 Depends:
     R (>= 3.3.0)
 Imports:
@@ -14,9 +16,10 @@ Imports:
 Suggests:
     RJDBC,
     RPostgres
-Description: Efficiently upload data into an Amazon Redshift database using the approach recommended by Amazon <https://aws.amazon.com/es/redshift/>.
-URL: https://github.com/sicarul/redshiftTools
-BugReports: https://github.com/sicarul/redshiftTools/issues
+Description: Efficiently upload data into an Amazon Redshift database using the 
+  approach recommended by Amazon <https://aws.amazon.com/es/redshift/>.
+URL: https://github.com/RedOakStrategic/redshiftTools
+BugReports: https://github.com/RedOakStrategic/redshiftTools/issues
 License: MIT + file LICENSE
 LazyData: TRUE
 RoxygenNote: 6.1.1
