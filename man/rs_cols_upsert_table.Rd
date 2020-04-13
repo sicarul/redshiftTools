@@ -4,14 +4,22 @@
 \alias{rs_cols_upsert_table}
 \title{Upsert Redshift table by specifying a column list}
 \usage{
-rs_cols_upsert_table(dat, dbcon, table_name, values, keys, split_files,
+rs_cols_upsert_table(
+  dat,
+  dbcon,
+  table_name,
+  values,
+  keys,
+  split_files,
   bucket = Sys.getenv("AWS_BUCKET_NAME"),
   region = Sys.getenv("AWS_DEFAULT_REGION"),
   access_key = Sys.getenv("AWS_ACCESS_KEY_ID"),
   secret_key = Sys.getenv("AWS_SECRET_ACCESS_KEY"),
   session_token = Sys.getenv("AWS_SESSION_TOKEN"),
-  iam_role_arn = Sys.getenv("AWS_IAM_ROLE_ARN"), wlm_slots = 1,
-  additional_params = "")
+  iam_role_arn = Sys.getenv("AWS_IAM_ROLE_ARN"),
+  wlm_slots = 1,
+  additional_params = ""
+)
 }
 \arguments{
 \item{dat}{a data frame}
