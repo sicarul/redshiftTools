@@ -2,13 +2,15 @@
 
 if(getRversion() >= "2.15.1")  utils::globalVariables(c("i", "obj"))
 
-#' @importFrom "aws.s3" "put_object" "bucket_exists"
-#' @importFrom "utils" "write.csv"
+#' @importFrom "paws" "s3"
+#' @importFrom "readr" "format_csv"
 #' @importFrom "purrr" "map2"
 #' @importFrom "progress" "progress_bar"
 uploadToS3 = function(data, bucket, split_files, key, secret, session, region){
-  prefix=paste0(sample(rep(letters, 10),50),collapse = "")
-  if(!bucket_exists(bucket, key=key, secret=secret, session=session, region=region)){
+
+  prefix = paste0(sample(rep(letters, 10),50), collapse = "")
+
+  if(!bucket_exists(bucket)){
     stop("Bucket does not exist")
   }
 
@@ -16,22 +18,19 @@ uploadToS3 = function(data, bucket, split_files, key, secret, session, region){
 
   message(paste("Uploading", split_files, "files with prefix", prefix, "to bucket", bucket))
 
-
   pb <- progress_bar$new(total = split_files, format='Uploading file :current/:total [:bar]')
   pb$tick(0)
 
   upload_part = function(part, i){
-    tmpFile = tempfile()
-    s3Name=paste(bucket, "/", prefix, ".", formatC(i, width = 4, format = "d", flag = "0"), sep="")
-    write.csv(part, gzfile(tmpFile, encoding="UTF-8"), na='', row.names=F, quote=T)
 
-    r=put_object(file = tmpFile, object = s3Name, bucket = "", key=key, secret=secret,
-        session=session, region=region)
+    s3Name <- paste(prefix, ".", formatC(i, width = 4, format = "d", flag = "0"), sep="")
+
+    r=put_object(.data = part, bucket = bucket, key = s3Name)
     pb$tick()
     return(r)
   }
 
-  res = map2 (splitted, 1:split_files, upload_part)
+  res = map2(splitted, 1:split_files, upload_part)
 
   if(length(which(!unlist(res))) > 0){
     warning("Error uploading data!")
@@ -42,7 +41,6 @@ uploadToS3 = function(data, bucket, split_files, key, secret, session, region){
   }
 }
 
-#' @importFrom "aws.s3" "delete_object"
 #' @importFrom "purrr" "map"
 deletePrefix = function(prefix, bucket, split_files, key, secret, session, region){
 
@@ -53,8 +51,8 @@ deletePrefix = function(prefix, bucket, split_files, key, secret, session, regio
   pb <- progress_bar$new(total = split_files, format='Deleting file :current/:total [:bar]')
   pb$tick(0)
 
-  deleteObj = function(obj){
-    delete_object(obj, bucket, key=key, secret=secret, session=session, region=region)
+  deleteObj = function(key){
+    delete_object(bucket, key = key)
     pb$tick()
   }
 
@@ -96,12 +94,11 @@ splitDetermine = function(dbcon, numRows, rowSize){
   return(split_files)
 }
 
-
 s3ToRedshift = function(dbcon, table_name, bucket, prefix, region, access_key, secret_key, session, iam_role_arn, additional_params){
     stageTable=paste0(sample(letters,16),collapse = "")
     # Create temporary table for staging data
     queryStmt(dbcon, sprintf("create temp table %s (like %s)", stageTable, table_name))
-    copyStr = "copy %s from 's3://%s/%s.' region '%s' csv gzip ignoreheader 1 emptyasnull COMPUPDATE FALSE STATUPDATE FALSE %s %s"
+    copyStr = "copy %s from 's3://%s/%s.' region '%s' csv ignoreheader 1 emptyasnull COMPUPDATE FALSE STATUPDATE FALSE %s %s"
     # Use IAM Role if available
     if (nchar(iam_role_arn) > 0) {
       credsStr = sprintf("iam_role '%s'", iam_role_arn)
@@ -117,4 +114,108 @@ s3ToRedshift = function(dbcon, table_name, bucket, prefix, region, access_key, s
     queryStmt(dbcon, statement)
 
     return(stageTable)
+}
+
+#' @importFrom paws s3
+bucket_exists <- function(bucket) {
+
+  svc <- s3(
+       config = list(
+         credentials = list(
+           creds = list(
+             access_key_id     = Sys.getenv('AWS_ACCESS_KEY_ID'),
+             secret_access_key = Sys.getenv('AWS_SECRET_ACCESS_KEY'),
+             session_token     = Sys.getenv('AWS_SESSION_TOKEN')
+            )
+          ),
+         region = Sys.getenv('AWS_DEFAULT_REGION')
+       )
+     )
+
+  response <- tryCatch(
+    expr = svc$head_bucket(bucket),
+    error = function(e) NULL
+  )
+
+  return(!is.null(response))
+}
+
+#' @importFrom paws s3
+object_exists <- function(bucket, key) {
+
+  svc <- s3(
+    config = list(
+      credentials = list(
+        creds = list(
+          access_key_id     = Sys.getenv('AWS_ACCESS_KEY_ID'),
+          secret_access_key = Sys.getenv('AWS_SECRET_ACCESS_KEY'),
+          session_token     = Sys.getenv('AWS_SESSION_TOKEN')
+        )
+      ),
+      region = Sys.getenv('AWS_DEFAULT_REGION')
+    )
+  )
+
+  response <- tryCatch(
+    expr = svc$head_object(Bucket = bucket, Key = key),
+    error = function(e) NULL
+  )
+
+  return(!is.null(response))
+}
+
+#' @importFrom paws s3
+delete_object <- function(bucket, key) {
+
+  if(!object_exists(bucket = bucket, key = key)){
+    stop("Object does not exist in the target bucket")
+  }
+
+  svc <- s3(
+    config = list(
+      credentials = list(
+        creds = list(
+          access_key_id     = Sys.getenv('AWS_ACCESS_KEY_ID'),
+          secret_access_key = Sys.getenv('AWS_SECRET_ACCESS_KEY'),
+          session_token     = Sys.getenv('AWS_SESSION_TOKEN')
+        )
+      ),
+      region = Sys.getenv('AWS_DEFAULT_REGION')
+    )
+  )
+
+  response <- tryCatch(
+    expr = svc$delete_object(Bucket = bucket, Key = key),
+    error = function(e) NULL
+  )
+
+  return(!is.null(response))
+}
+
+#' @importFrom paws s3
+#' @importFrom readr format_csv
+put_object <- function(.data, bucket, key) {
+
+  svc <- s3(
+    config = list(
+      credentials = list(
+        creds = list(
+          access_key_id     = Sys.getenv('AWS_ACCESS_KEY_ID'),
+          secret_access_key = Sys.getenv('AWS_SECRET_ACCESS_KEY'),
+          session_token     = Sys.getenv('AWS_SESSION_TOKEN')
+        )
+      ),
+      region = Sys.getenv('AWS_DEFAULT_REGION')
+    )
+  )
+
+  response <- tryCatch(
+    expr = .data %>%
+             format_csv(na = "") %>%
+             charToRaw() %>%
+             svc$put_object(Body = ., Bucket = bucket, Key = key),
+    error = function(e) NULL
+  )
+
+  return(!is.null(response))
 }
