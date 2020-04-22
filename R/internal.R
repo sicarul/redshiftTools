@@ -35,7 +35,7 @@ uploadToS3 = function(data, bucket, split_files, key, secret, session, region){
     upload_response <- NULL
     attempt_count   <- 0
 
-    while (is.null(upload_response) | inherits(upload_response, "http_500") | attempt_count < 3){
+    while (is.null(upload_response) | inherits(upload_response, "http_500") & attempt_count < 3){
       attempt_count <- attempt_count + 1
       upload_response <- tryCatch(put_object(.data = part, bucket = bucket, key = s3Name),
                                   error = function(e) e)
@@ -80,7 +80,7 @@ deletePrefix = function(prefix, bucket, split_files, key, secret, session, regio
     delete_response <- NULL
     attempt_count   <- 0
 
-    while (is.null(delete_response) | inherits(delete_response, "http_500") | attempt_count < 3){
+    while (is.null(delete_response) | inherits(delete_response, "http_500") & attempt_count < 3){
       attempt_count <- attempt_count + 1
       delete_response <- tryCatch(delete_object(bucket, key = key),
                                   error = function(e) e)
@@ -136,7 +136,7 @@ splitDetermine = function(dbcon, numRows, rowSize){
 }
 
 s3ToRedshift = function(dbcon, table_name, bucket, prefix, region, access_key, secret_key, session, iam_role_arn, additional_params){
-    stageTable=paste0(sample(letters,16),collapse = "")
+    stageTable=paste0(sample(letters, 16), collapse = "")
     # Create temporary table for staging data
     queryStmt(dbcon, sprintf("create temp table %s (like %s)", stageTable, table_name))
     copyStr = "copy %s from 's3://%s/%s.' region '%s' csv ignoreheader 1 emptyasnull COMPUPDATE FALSE STATUPDATE FALSE %s %s"
