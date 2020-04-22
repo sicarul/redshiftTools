@@ -252,8 +252,8 @@ put_object <- function(.data, bucket, key) {
              format_csv(na = "") %>%
              charToRaw() %>%
              svc$put_object(Body = ., Bucket = bucket, Key = key),
-    error = function(e) e
+    error = function(e) NULL
   )
 
-  return(response)
+  return(!is.null(response))
 }
