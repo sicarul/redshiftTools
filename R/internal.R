@@ -224,10 +224,10 @@ delete_object <- function(bucket, key) {
 
   response <- tryCatch(
     expr = svc$delete_object(Bucket = bucket, Key = key),
-    error = function(e) e
+    error = function(e) NULL
   )
 
-  return(response)
+  return(!is.null(response))
 }
 
 #' @importFrom paws s3
