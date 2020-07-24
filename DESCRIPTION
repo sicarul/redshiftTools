@@ -1,7 +1,7 @@
 Package: redshiftTools
 Type: Package
 Title: Amazon Redshift Tools
-Version: 1.0.2
+Version: 1.1.0
 Authors@R: c(
     person(given = "Jake",  family = "Russ",    email = "jake@redoakstrategic.com", role = c("aut", "cre")),
     person(given = "Pablo", family = "Seibelt", email = "pabloseibelt@sicarul.com", role = c("aut")),
