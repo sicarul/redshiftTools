@@ -4,15 +4,25 @@
 \alias{rs_create_table}
 \title{Create a table from scratch, guessing the table schema}
 \usage{
-rs_create_table(df, dbcon, table_name = deparse(substitute(df)),
-  split_files, bucket = Sys.getenv("AWS_BUCKET_NAME"),
+rs_create_table(
+  df,
+  dbcon,
+  table_name = deparse(substitute(df)),
+  split_files,
+  bucket = Sys.getenv("AWS_BUCKET_NAME"),
   region = Sys.getenv("AWS_DEFAULT_REGION"),
   access_key = Sys.getenv("AWS_ACCESS_KEY_ID"),
   secret_key = Sys.getenv("AWS_SECRET_ACCESS_KEY"),
   session_token = Sys.getenv("AWS_SESSION_TOKEN"),
-  iam_role_arn = Sys.getenv("AWS_IAM_ROLE_ARN"), wlm_slots = 1,
-  sortkeys, sortkey_style = "compound", distkey,
-  distkey_style = "even", compression = T, additional_params = "")
+  iam_role_arn = Sys.getenv("AWS_IAM_ROLE_ARN"),
+  wlm_slots = 1,
+  sortkeys,
+  sortkey_style = "compound",
+  distkey,
+  distkey_style = "even",
+  compression = T,
+  additional_params = ""
+)
 }
 \arguments{
 \item{df}{a data frame}

@@ -4,14 +4,20 @@
 \alias{rs_replace_table}
 \title{Replace redshift table}
 \usage{
-rs_replace_table(df, dbcon, table_name, split_files,
+rs_replace_table(
+  df,
+  dbcon,
+  table_name,
+  split_files,
   bucket = Sys.getenv("AWS_BUCKET_NAME"),
   region = Sys.getenv("AWS_DEFAULT_REGION"),
   access_key = Sys.getenv("AWS_ACCESS_KEY_ID"),
   secret_key = Sys.getenv("AWS_SECRET_ACCESS_KEY"),
   session_token = Sys.getenv("AWS_SESSION_TOKEN"),
-  iam_role_arn = Sys.getenv("AWS_IAM_ROLE_ARN"), wlm_slots = 1,
-  additional_params = "")
+  iam_role_arn = Sys.getenv("AWS_IAM_ROLE_ARN"),
+  wlm_slots = 1,
+  additional_params = ""
+)
 }
 \arguments{
 \item{df}{a data frame}

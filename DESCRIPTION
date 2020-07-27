@@ -1,25 +1,29 @@
 Package: redshiftTools
 Type: Package
 Title: Amazon Redshift Tools
-Version: 1.0.1.900
-Authors@R: person("Pablo", "Seibelt", email = "pabloseibelt@sicarul.com",
-  role = c("aut", "cre"))
+Version: 1.1.0
+Authors@R: c(
+    person(given = "Jake",  family = "Russ",    email = "jake@redoakstrategic.com", role = c("aut", "cre")),
+    person(given = "Pablo", family = "Seibelt", email = "pabloseibelt@sicarul.com", role = c("aut")),
+    person("Red Oak Strategic", role = "cph"))
 Depends:
     R (>= 3.3.0)
 Imports:
     DBI,
-    aws.s3,
     purrr,
-    progress
+    progress,
+    magrittr
 Suggests:
     RJDBC,
     RPostgres
-Description: Efficiently upload data into an Amazon Redshift database using the approach recommended by Amazon <https://aws.amazon.com/es/redshift/>.
-URL: https://github.com/sicarul/redshiftTools
-BugReports: https://github.com/sicarul/redshiftTools/issues
+Description: Efficiently upload data into an Amazon Redshift database using the 
+  approach recommended by Amazon <https://aws.amazon.com/es/redshift/>.
+URL: https://github.com/RedOakStrategic/redshiftTools
+BugReports: https://github.com/RedOakStrategic/redshiftTools/issues
 License: MIT + file LICENSE
 LazyData: TRUE
-RoxygenNote: 6.1.1
+Encoding: UTF-8
+RoxygenNote: 7.1.0
 Collate: 
     'append.R'
     'create.R'
@@ -29,3 +33,4 @@ Collate:
     'upsert.R'
     'upsert2.R'
     'rs_utils.R'
+    'utils-pipe.R'
