@@ -1,7 +1,7 @@
 #' @importFrom "utils" "head"
 calculateCharSize <- function(col){
   col=as.character(col)
-  maxChar = max(nchar(col), na.rm=T)
+  maxChar = max(nchar(col,type='bytes'), na.rm=T)
   if(is.infinite(maxChar)){
     maxChar=1000
     warning('Empty column found, setting to 1024 length')
