@@ -70,7 +70,7 @@ rs_cols_upsert_table = function(dat,
   message(paste0("The provided data.frame has ", numRows, ' rows and ', numCols, ' columns'))
 
   if (missing(split_files)) {
-    split_files = splitDetermine(dbcon, numRows, as.numeric(object.size(df[1,])))
+    split_files = splitDetermine(dbcon, numRows, (as.numeric(object.size(df))/nrow(df)))
   }
   split_files = pmin(split_files, numRows)
 

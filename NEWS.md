@@ -1,7 +1,18 @@
-## redshiftTools 1.0.1
+# redshiftTools 1.1.0
 
-Fixed eagerness on parallelization when uploading files causing issues when many processes are run at once.
+* New Maintainer: Jake Russ, Chief Data Scientist, Red Oak Strategic. Many 
+thanks to the original creator Pablo Seibelt.
 
-## redshiftTools 1.0
+## Major changes
 
-Initial CRAN release
+* This package now depends on [{paws}](https://github.com/paws-r/paws)
+instead of {aws.s3}.
+
+# redshiftTools 1.0.1
+
+* Fixed eagerness on parallelization when uploading files causing issues when 
+many processes are run at once.
+
+# redshiftTools 1.0
+
+* Initial CRAN release

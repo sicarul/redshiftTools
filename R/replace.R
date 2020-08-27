@@ -65,7 +65,7 @@ rs_replace_table = function(
 
 
   if(missing(split_files)){
-    split_files = splitDetermine(dbcon, numRows, as.numeric(object.size(df[1,])))
+    split_files = splitDetermine(dbcon, numRows, (as.numeric(object.size(df))/nrow(df)))
   }
   split_files = pmin(split_files, numRows)
 

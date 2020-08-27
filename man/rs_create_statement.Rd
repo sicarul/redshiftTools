@@ -4,9 +4,15 @@
 \alias{rs_create_statement}
 \title{Generate create table statement for Amazon Redshift}
 \usage{
-rs_create_statement(df, table_name = deparse(substitute(df)), sortkeys,
-  sortkey_style = "compound", distkey, distkey_style = "even",
-  compression = T)
+rs_create_statement(
+  df,
+  table_name = deparse(substitute(df)),
+  sortkeys,
+  sortkey_style = "compound",
+  distkey,
+  distkey_style = "even",
+  compression = T
+)
 }
 \arguments{
 \item{df}{the data.frame you want to upload to Amazon Redshift}
