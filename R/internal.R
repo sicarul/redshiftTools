@@ -5,7 +5,7 @@ log_if_verbose <- function(...) {
 }
 
 stopifnoschema <- function(table_name) {
-  assertthat::assert_that("ident" %in% class(table_name), msg = "Table name must be result of dbplyr::in_schema()")
+  assertthat::assert_that(any(c("ident","dbplyr_schema") %in% class(table_name)), msg = "Table name must be result of dbplyr::in_schema()")
 }
 
 warnifnoschema <- function(table_name) {
@@ -36,7 +36,7 @@ boto <- reticulate::import("boto", delay_load = TRUE)
 read.text = function(pathname) {
   if (file.exists(pathname)) {
 	      return (paste(readLines(pathname), collapse="\n"))
-  } 
+  }
 }
 
 check_aws_credentials <- function() {
@@ -45,13 +45,13 @@ check_aws_credentials <- function() {
   renviron_path = "/etc/R/Renviron.site"
   rprofile_path = ".Rprofile"
   aws_key_env_set = Sys.getenv("AWS_ACCESS_KEY_ID") != ""
-  aws_configure_exists = file.exists(aws_configure_path) 
+  aws_configure_exists = file.exists(aws_configure_path)
   aws_credentials_exists = file.exists(aws_credentials_path)
   # Does not need checking as both would set env var, keeping it here for completness
   renviron_exists = file.exists(renviron_path)
   rprofile_exists = file.exists(rprofile_path)
   if (aws_key_env_set) {
-    log_if_verbose("AWS_ACCESS_KEY_ID is set, it will override other aws credentials") 	
+    log_if_verbose("AWS_ACCESS_KEY_ID is set, it will override other aws credentials")
   } else if (aws_credentials_exists && grepl("aws_access_key_id", read.text(aws_credentials_path))) {
       log_if_verbose("aws_access_key_id is set in ~/.aws/credentials, it will overrride other aws credentials")
   } else if (aws_configure_exists && grepl("aws_access_key_id", read.text(aws_configure_path))) {
