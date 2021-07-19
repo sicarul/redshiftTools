@@ -9,6 +9,12 @@ generating various CSV files, uploading them to an S3 bucket and then
 calling a copy command on the server, this package helps with all those
 tasks in encapsulated functions.
 
+# WARNING
+
+This package is not being maintained, however this fork is being maintained instead:
+https://github.com/RedOakStrategic/redshiftTools
+
+
 Installation
 ------------
 
